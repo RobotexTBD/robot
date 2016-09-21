@@ -11,7 +11,10 @@ import javafx.application.Platform;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
+import java.awt.*;
+import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
+import java.util.Collection;
 
 @Slf4j
 public class Robot implements Runnable {
@@ -56,16 +59,27 @@ public class Robot implements Runnable {
 
         Planar<GrayF32> hsv = ImageConverterUtil.getHsvImage(original);
         GrayF32 certaintyMap = ImageProcessor.generateCertaintyMap(hsv);
-        setDebugImage(ImagePanel.MUTATED3, certaintyMap, "Certainty map");
+        setDebugImage(ImagePanel.MUTATED2, certaintyMap, "Certainty map");
 
         GrayU8 maxCertainty = ThresholdImageOps.threshold(certaintyMap, null, 1.0f, false);
         setDebugImage(ImagePanel.MUTATED5, maxCertainty, "Max Certainty");
 
-        ImageProcessor.fillHoles(maxCertainty);
+        Collection<Blob> blobs = ImageProcessor.findBlobsAndFillHoles(maxCertainty);
         setDebugImage(ImagePanel.MUTATED4, maxCertainty, "Max Certainty filled");
 
-        ImageProcessor.mutateImage(hsv);
-        setDebugImage(ImagePanel.MUTATED2, hsv, "Mutated");
+
+        Graphics2D g2 = original.createGraphics();
+        g2.setStroke(new BasicStroke(2));
+        g2.setColor(Color.RED);
+        for(Blob blob : blobs) {
+            float radius = (float) Math.sqrt(blob.getSize() / Math.PI);
+            g2.draw(new Ellipse2D.Float(blob.getCenterX() - radius, blob.getCenterY() - radius,
+                                        radius * 2, radius * 2));
+            String text = String.format("%dx%d: %d", blob.getCenterX(), blob.getCenterY(), blob.getSize());
+            g2.drawChars(text.toCharArray(), 0, text.length(),
+                         (int) (blob.getCenterX() + radius), (int) (blob.getCenterY() - radius));
+        }
+        setDebugImage(ImagePanel.MUTATED3, original, "Detections");
 
         GrayU8 binary = ThresholdImageOps.threshold(hsv.getBand(1), null, 0.8f, false);
         binary = BinaryImageOps.erode8(binary, 2, null);

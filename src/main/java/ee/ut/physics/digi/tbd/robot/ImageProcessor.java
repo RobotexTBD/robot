@@ -6,7 +6,11 @@ import boofcv.struct.image.Planar;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Queue;
+import java.util.concurrent.atomic.LongAdder;
+import java.util.function.BiConsumer;
 
 @Slf4j
 public class ImageProcessor {
@@ -20,24 +24,6 @@ public class ImageProcessor {
             return 2 * (float) Math.PI;
         }
         return Math.min(Math.abs(hue1 - hue2), Math.min(hue1, hue2) + 2 * (float) Math.PI - hue2);
-    }
-
-    public static void mutateImage(Planar<GrayF32> hsv) {
-        GrayF32 hue = hsv.getBand(0);
-        GrayF32 saturation = hsv.getBand(1);
-        GrayF32 value = hsv.getBand(2);
-        float orangeHue = 0.4f;
-        for(int x = 0; x < hue.getWidth(); x++) {
-            for(int y = 0; y < hue.getHeight(); y++) {
-                float hueDistance = hueDistance(orangeHue, hue.get(x, y));
-                if(hueDistance > 0.2f || value.get(x, y) * saturation.get(x, y) < 0.4f) {
-                    value.set(x, y, 0);
-                    saturation.set(x, y, 0);
-                } else {
-                    saturation.set(x, y, 1);
-                }
-            }
-        }
     }
 
     public static GrayF32 generateCertaintyMap(Planar<GrayF32> hsv) {
@@ -61,56 +47,105 @@ public class ImageProcessor {
         return certainty;
     }
 
-    public static void fillHoles(GrayU8 binary) {
+    public static Collection<Blob> findBlobsAndFillHoles(GrayU8 binary) {
         long startTime = System.currentTimeMillis();
         int width = binary.getWidth();
         int height = binary.getHeight();
-        boolean[][] visited = new boolean[binary.getWidth()][binary.getHeight()];
+        int stride = width + 2;
+        boolean[][] visited = buildVisitedMap(binary);
         Queue<Integer> visitQueue = new ArrayDeque<>();
-        for(int x = 0; x < binary.getWidth(); x++) {
-            visitQueue.add(x);
-            visitQueue.add(x + width * (height - 1));
+        for(int x = 1; x <= binary.getWidth(); x++) {
+            visitQueue.add(x + stride);
+            visitQueue.add(x + stride * height);
         }
-        for(int y = 0; y < binary.getHeight(); y++) {
-            visitQueue.add(width * y);
-            visitQueue.add(width * (y + 1) - 1);
+        for(int y = 2; y <= binary.getHeight() - 1; y++) {
+            visitQueue.add(1 + stride * y);
+            visitQueue.add(width + stride * y);
         }
+        traverse(visited, visitQueue, null);
+        for(int x = 0; x < width; x++) {
+            for(int y = 0; y < height; y++) {
+                if(binary.unsafe_get(x, y) > 0) {
+                    visited[x + 1][y + 1] = false;
+                }
+            }
+        }
+        Collection<Blob> blobs = new ArrayList<>();
+        for(int x = 0; x < width; x++) {
+            for(int y = 0; y < height; y++) {
+                if(!visited[x + 1][y + 1]) {
+                    LongAdder sumX = new LongAdder();
+                    LongAdder sumY = new LongAdder();
+                    LongAdder countAdder = new LongAdder();
+                    visitQueue.add(x + 1 + (y + 1) * stride);
+                    traverse(visited, visitQueue, (matchX, matchY) -> {
+                        binary.unsafe_set(matchX - 1, matchY - 1, 1);
+                        sumX.add(matchX);
+                        //noinspection SuspiciousNameCombination
+                        sumY.add(matchY);
+                        countAdder.increment();
+                    });
+                    int count = countAdder.intValue();
+                    if(count > 64) {
+                        blobs.add(new Blob(sumX.intValue() / count, sumY.intValue() / count, count));
+                    }
+                }
+            }
+        }
+        log.debug("Image processing took " + (System.currentTimeMillis() - startTime) + " ms");
+        return blobs;
+    }
+
+    private static void traverse(boolean[][] visited, Queue<Integer> visitQueue,
+                                BiConsumer<Integer, Integer> matchConsumer) {
+        int stride = visited.length;
         while(true) {
             Integer position = visitQueue.poll();
             if(position == null) {
                 break;
             }
-            int x = position % width;
-            int y = position / width;
-            if(visited[x][y] || binary.unsafe_get(x, y) > 0) {
+            int x = position % stride;
+            int y = position / stride;
+            if(visited[x][y]) {
                 continue;
             }
             visited[x][y] = true;
-            if(x > 0) {
-                if(!visited[x - 1][y] && binary.unsafe_get(x - 1, y) == 0)
+            if(matchConsumer != null) {
+                matchConsumer.accept(x, y);
+            }
+            if(!visited[x - 1][y]) {
                 visitQueue.add(position - 1);
             }
-            if(x < width - 1) {
-                if(!visited[x + 1][y] && binary.unsafe_get(x + 1, y) == 0)
+            if(!visited[x + 1][y]) {
                 visitQueue.add(position + 1);
             }
-            if(y > 0) {
-                if(!visited[x][y - 1] && binary.unsafe_get(x, y - 1) == 0)
-                visitQueue.add(position - width);
+            if(!visited[x][y - 1]) {
+                visitQueue.add(position - stride);
             }
-            if(y < height - 1) {
-                if(!visited[x][y + 1] && binary.unsafe_get(x, y + 1) == 0)
-                visitQueue.add(position + width);
+            if(!visited[x][y + 1]) {
+                visitQueue.add(position + stride);
             }
         }
-        log.debug("Graph took " + (System.currentTimeMillis() - startTime) + " ms");
+    }
+
+    private static boolean[][] buildVisitedMap(GrayU8 image) {
+        int width = image.getWidth();
+        int height = image.getHeight();
+        boolean[][] visited = new boolean[width + 2][height + 2];
+        for(int x = 0; x < width + 2; x++) {
+            visited[x][0] = true;
+            visited[x][height + 1] = true;
+        }
+        for(int y = 1; y <= height; y++) {
+            visited[0][y] = true;
+            visited[width + 1][y] = true;
+        }
         for(int x = 0; x < width; x++) {
             for(int y = 0; y < height; y++) {
-                if(!visited[x][y]) {
-                    binary.unsafe_set(x, y, 1);
-                }
+                visited[x + 1][y + 1] = image.unsafe_get(x, y) > 0;
             }
         }
+        return visited;
     }
 
     private static float distanceFromRange(float min, float max, float value) {
