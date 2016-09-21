@@ -1,22 +1,16 @@
 package ee.ut.physics.digi.tbd.robot;
 
 import boofcv.alg.filter.binary.BinaryImageOps;
-import boofcv.alg.filter.binary.Contour;
 import boofcv.alg.filter.binary.ThresholdImageOps;
-import boofcv.alg.shapes.ShapeFittingOps;
-import boofcv.gui.feature.VisualizeShapes;
 import boofcv.io.webcamcapture.UtilWebcamCapture;
-import boofcv.struct.ConnectRule;
 import boofcv.struct.image.GrayF32;
 import boofcv.struct.image.GrayU8;
 import boofcv.struct.image.Planar;
 import com.github.sarxos.webcam.Webcam;
-import georegression.struct.shapes.EllipseRotated_F64;
 import javafx.application.Platform;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
-import java.awt.*;
 import java.awt.image.BufferedImage;
 
 @Slf4j
@@ -49,7 +43,7 @@ public class Robot implements Runnable {
             if(isDebug()) {
                 Platform.runLater(debugWindow::render);
             }
-            log.debug("Loop took " + (System.currentTimeMillis() - startTime) + " ms");
+            //log.debug("Loop took " + (System.currentTimeMillis() - startTime) + " ms");
         }
         if(isDebug()) {
             debugWindow.stop();
@@ -61,15 +55,25 @@ public class Robot implements Runnable {
         setDebugImage(ImagePanel.ORIGINAL, original, "Original");
 
         Planar<GrayF32> hsv = ImageConverterUtil.getHsvImage(original);
+        GrayF32 certaintyMap = ImageProcessor.generateCertaintyMap(hsv);
+        setDebugImage(ImagePanel.MUTATED3, certaintyMap, "Certainty map");
+
+        GrayU8 maxCertainty = ThresholdImageOps.threshold(certaintyMap, null, 1.0f, false);
+        setDebugImage(ImagePanel.MUTATED5, maxCertainty, "Max Certainty");
+
+        ImageProcessor.fillHoles(maxCertainty);
+        setDebugImage(ImagePanel.MUTATED4, maxCertainty, "Max Certainty filled");
+
         ImageProcessor.mutateImage(hsv);
-        setDebugImage(ImagePanel.MUTATED1, hsv, "Mutated");
+        setDebugImage(ImagePanel.MUTATED2, hsv, "Mutated");
 
         GrayU8 binary = ThresholdImageOps.threshold(hsv.getBand(1), null, 0.8f, false);
         binary = BinaryImageOps.erode8(binary, 2, null);
         binary = BinaryImageOps.dilate8(binary, 2, null);
-        setDebugImage(ImagePanel.MUTATED2, binary, "Thresholded");
+        setDebugImage(ImagePanel.MUTATED1, binary, "Thresholded");
 
-        Graphics2D g2 = original.createGraphics();
+
+     /*   Graphics2D g2 = original.createGraphics();
         g2.setStroke(new BasicStroke(2));
         g2.setColor(Color.RED);
 
@@ -78,8 +82,7 @@ public class Robot implements Runnable {
             if(contour.external.size() > 20) {
                 continue;
             }
-            EllipseRotated_F64 ellipse = ShapeFittingOps.fitEllipse_I32(contour.external, 100, false, null)
-                    .shape;
+            EllipseRotated_F64 ellipse = ShapeFittingOps.fitEllipse_I32(contour.external, 100, false, null).shape;
             if(ellipse.a / ellipse.b > 1.5 || ellipse.a * ellipse.b < 3.0) {
                 continue;
             }
@@ -88,10 +91,16 @@ public class Robot implements Runnable {
                          (int) ellipse.center.getX(), (int) ellipse.center.getY());
             VisualizeShapes.drawEllipse(ellipse, g2);
         }
-        setDebugImage(ImagePanel.MUTATED3, original, "Detections");
+        setDebugImage(ImagePanel.MUTATED3, original, "Detections");*/
     }
 
     private void setDebugImage(ImagePanel target, GrayU8 image, String label) {
+        if(isDebug()) {
+            debugWindow.setImage(target, ImageConverterUtil.getBufferedImage(image), label);
+        }
+    }
+
+    private void setDebugImage(ImagePanel target, GrayF32 image, String label) {
         if(isDebug()) {
             debugWindow.setImage(target, ImageConverterUtil.getBufferedImage(image), label);
         }
