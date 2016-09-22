@@ -55,13 +55,14 @@ public class Robot implements Runnable {
     }
 
     public void loop(BufferedImage original) {
-        setDebugImage(ImagePanel.ORIGINAL, original, "Original");
 
         Planar<GrayF32> hsv = ImageConverterUtil.getHsvImage(original);
+        setDebugImage(ImagePanel.ORIGINAL, hsv, "Original");
         GrayF32 certaintyMap = ImageProcessor.generateCertaintyMap(hsv);
         setDebugImage(ImagePanel.MUTATED2, certaintyMap, "Certainty map");
 
-        GrayU8 maxCertainty = ThresholdImageOps.threshold(certaintyMap, null, 1.0f, false);
+        GrayU8 maxCertainty = ThresholdImageOps.threshold(certaintyMap, null, 255.0f * 0.5f, false);
+        maxCertainty = BinaryImageOps.dilate8(maxCertainty, 1, null);
         setDebugImage(ImagePanel.MUTATED5, maxCertainty, "Max Certainty");
 
         Collection<Blob> blobs = ImageProcessor.findBlobsAndFillHoles(maxCertainty);
@@ -86,43 +87,23 @@ public class Robot implements Runnable {
         binary = BinaryImageOps.dilate8(binary, 2, null);
         setDebugImage(ImagePanel.MUTATED1, binary, "Thresholded");
 
-
-     /*   Graphics2D g2 = original.createGraphics();
-        g2.setStroke(new BasicStroke(2));
-        g2.setColor(Color.RED);
-
-        java.util.List<Contour> contours = BinaryImageOps.contour(binary, ConnectRule.EIGHT, null);
-        for(Contour contour: contours) {
-            if(contour.external.size() > 20) {
-                continue;
-            }
-            EllipseRotated_F64 ellipse = ShapeFittingOps.fitEllipse_I32(contour.external, 100, false, null).shape;
-            if(ellipse.a / ellipse.b > 1.5 || ellipse.a * ellipse.b < 3.0) {
-                continue;
-            }
-            String text = String.valueOf(ellipse.a * ellipse.b);
-            g2.drawChars(text.toCharArray(), 0, text.length(),
-                         (int) ellipse.center.getX(), (int) ellipse.center.getY());
-            VisualizeShapes.drawEllipse(ellipse, g2);
-        }
-        setDebugImage(ImagePanel.MUTATED3, original, "Detections");*/
     }
 
     private void setDebugImage(ImagePanel target, GrayU8 image, String label) {
         if(isDebug()) {
-            debugWindow.setImage(target, ImageConverterUtil.getBufferedImage(image), label);
+            debugWindow.setImage(target, ImageConverterUtil.getImage(image), label);
         }
     }
 
     private void setDebugImage(ImagePanel target, GrayF32 image, String label) {
         if(isDebug()) {
-            debugWindow.setImage(target, ImageConverterUtil.getBufferedImage(image), label);
+            debugWindow.setImage(target, ImageConverterUtil.getImage(image), label);
         }
     }
 
     private void setDebugImage(ImagePanel target, Planar<GrayF32> image, String label) {
         if(isDebug()) {
-            debugWindow.setImage(target, ImageConverterUtil.getBufferedImage(image), label);
+            debugWindow.setImage(target, ImageConverterUtil.getImage(image), label);
         }
     }
 

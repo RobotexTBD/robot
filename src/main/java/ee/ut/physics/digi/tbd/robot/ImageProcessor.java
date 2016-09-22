@@ -15,7 +15,7 @@ import java.util.function.BiConsumer;
 @Slf4j
 public class ImageProcessor {
 
-    private static final float ORANGE_HUE = AngleUtil.toRadians(24.0f);
+    private static final float ORANGE_HUE = AngleUtil.toRadians(18.0f);
 
     private ImageProcessor() {}
 
@@ -31,7 +31,6 @@ public class ImageProcessor {
         GrayF32 saturation = hsv.getBand(1);
         GrayF32 value = hsv.getBand(2);
         GrayF32 certainty = saturation.createSameShape();
-
         for(int x = 0; x < hue.getWidth(); x++) {
             for(int y = 0; y < hue.getHeight(); y++) {
                 float expectedHueDistance = AngleUtil.toRadians(pow(10.0f - value.unsafe_get(x, y) / 25.5f, 2.25f));
@@ -40,8 +39,9 @@ public class ImageProcessor {
                 float hueCertainty = Math.max(1.0f - pow(hueError * 2.5f, 2.25f), 0.0f);
                 float saturationCertainty = limit(0.0f, 1.0f, 4 * saturation.unsafe_get(x, y) - 1.5f);
                 float valueCertainty = limit(0.0f, 1.0f, 4 * saturation.unsafe_get(x, y) - 1.0f);
-                float certaintyValue = hueCertainty * saturationCertainty * valueCertainty;
-                certainty.unsafe_set(x, y, 510.0f * certaintyValue - 255.0f);
+                float hueDistanceCertainty = Math.max(1.0f - pow(hueDistance, 2.25f) * 1.5f, 0.0f);
+                float certaintyValue = hueCertainty * saturationCertainty * valueCertainty * hueDistanceCertainty;
+                certainty.unsafe_set(x, y, 255.0f * certaintyValue);
             }
         }
         return certainty;

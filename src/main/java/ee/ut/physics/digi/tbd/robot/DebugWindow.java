@@ -8,10 +8,10 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
 import lombok.SneakyThrows;
 
 import java.awt.image.BufferedImage;
@@ -24,7 +24,7 @@ public class DebugWindow extends Application {
     private static DebugWindow instance;
     private static final CountDownLatch latch = new CountDownLatch(1);
 
-    private Map<ImagePanel, WritableImage> images = new EnumMap<>(ImagePanel.class);
+    private Map<ImagePanel, Image> images = new EnumMap<>(ImagePanel.class);
     private Map<ImagePanel, String> labels = new EnumMap<>(ImagePanel.class);
     private Parent scene;
 
@@ -47,6 +47,15 @@ public class DebugWindow extends Application {
         WritableImage writableImage = new WritableImage(image.getWidth(), image.getHeight());
         SwingFXUtils.toFXImage(image, writableImage);
         images.put(target, writableImage);
+        if(label != null) {
+            labels.put(target, label);
+        } else {
+            labels.remove(target);
+        }
+    }
+
+    public void setImage(ImagePanel target, Image image, String label) {
+        images.put(target, image);
         if(label != null) {
             labels.put(target, label);
         } else {
