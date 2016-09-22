@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.LongAdder;
 @Slf4j
 public class ImageProcessor {
 
-    private static final float ORANGE_HUE = AngleUtil.toRadians(18.0f);
+    private static final float ORANGE_HUE = AngleUtil.toRadians(15.0f);
 
     private ImageProcessor() {}
 
@@ -104,19 +104,20 @@ public class ImageProcessor {
                 minY = Math.min(y, minY);
                 maxY = Math.max(y, maxY);
                 visited[position] = true;
-                float currentCertainty = certaintyMap.unsafe_get(x, y);
                 int moves[] = {-1, 0, 1, 0, 0, -1, 0, 1};
                 for(int i = 0; i < 4; i++) {
-                    float nextCertainty = certaintyMap.unsafe_get(x + moves[i * 2], y + moves[i * 2 + 1]);
-                    if(currentCertainty - nextCertainty < 0.5f) {
-                        int newPosition = position + moves[i * 2] + moves[i * 2 + 1] * stride;
-                        if(!visited[newPosition]) {
+                    int newPosition = position + moves[i * 2] + moves[i * 2 + 1] * stride;
+                    if(!visited[newPosition]) {
+                        float nextCertainty = certaintyMap.unsafe_get(x + moves[i * 2], y + moves[i * 2 + 1]);
+                        if(nextCertainty > 0.5f) {
                             visitQueue.add(newPosition);
                         }
                     }
                 }
             }
-            realBlobs.add(new Blob(sumX / size, sumY / size, size));
+            if(size > 64) { // size may be zero
+                realBlobs.add(new Blob(sumX / size, sumY / size, size));
+            }
         }
         log.debug("Image processing took " + (System.currentTimeMillis() - startTime) + " ms");
         return realBlobs;
@@ -155,11 +156,6 @@ public class ImageProcessor {
         for(int y = 1; y <= height; y++) {
             visited[y * stride] = true;
             visited[width + 1 + y * stride] = true;
-        }
-        for(int x = 0; x < width; x++) {
-            for(int y = 0; y < height; y++) {
-                visited[x + 1 + (y + 1) * stride] = image.unsafe_get(x, y) > 0;
-            }
         }
         return visited;
     }
