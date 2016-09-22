@@ -60,14 +60,7 @@ public class Robot implements Runnable {
         setDebugImage(ImagePanel.ORIGINAL, hsv, "Original");
         GrayF32 certaintyMap = ImageProcessor.generateCertaintyMap(hsv);
         setDebugImage(ImagePanel.MUTATED2, certaintyMap, "Certainty map");
-
-        GrayU8 maxCertainty = ThresholdImageOps.threshold(certaintyMap, null, 255.0f * 0.5f, false);
-        maxCertainty = BinaryImageOps.dilate8(maxCertainty, 1, null);
-        setDebugImage(ImagePanel.MUTATED5, maxCertainty, "Max Certainty");
-
-        Collection<Blob> blobs = ImageProcessor.findBlobsAndFillHoles(maxCertainty);
-        setDebugImage(ImagePanel.MUTATED4, maxCertainty, "Max Certainty filled");
-
+        Collection<Blob> blobs = ImageProcessor.findBlobs(certaintyMap);
 
         Graphics2D g2 = original.createGraphics();
         g2.setStroke(new BasicStroke(2));

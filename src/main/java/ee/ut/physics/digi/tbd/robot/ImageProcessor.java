@@ -1,5 +1,6 @@
 package ee.ut.physics.digi.tbd.robot;
 
+import boofcv.alg.filter.binary.ThresholdImageOps;
 import boofcv.struct.image.GrayF32;
 import boofcv.struct.image.GrayU8;
 import boofcv.struct.image.Planar;
@@ -10,7 +11,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Queue;
 import java.util.concurrent.atomic.LongAdder;
-import java.util.function.BiConsumer;
 
 @Slf4j
 public class ImageProcessor {
@@ -47,102 +47,118 @@ public class ImageProcessor {
         return certainty;
     }
 
-    public static Collection<Blob> findBlobsAndFillHoles(GrayU8 binary) {
+    public static Collection<Blob> findBlobs(GrayF32 certaintyMap) {
         long startTime = System.currentTimeMillis();
-        int width = binary.getWidth();
-        int height = binary.getHeight();
+        GrayU8 primary = ThresholdImageOps.threshold(certaintyMap, null, 255.0f * 0.9f, false);
+        int width = primary.getWidth();
+        int height = primary.getHeight();
         int stride = width + 2;
-        boolean[][] visited = buildVisitedMap(binary);
+        boolean[] visited = buildVisitedMap(primary);
         Queue<Integer> visitQueue = new ArrayDeque<>();
-        for(int x = 1; x <= binary.getWidth(); x++) {
-            visitQueue.add(x + stride);
-            visitQueue.add(x + stride * height);
-        }
-        for(int y = 2; y <= binary.getHeight() - 1; y++) {
-            visitQueue.add(1 + stride * y);
-            visitQueue.add(width + stride * y);
-        }
-        traverse(visited, visitQueue, null);
+        int a = 0;
         for(int x = 0; x < width; x++) {
             for(int y = 0; y < height; y++) {
-                if(binary.unsafe_get(x, y) > 0) {
-                    visited[x + 1][y + 1] = false;
+                if(primary.unsafe_get(x, y) == 0) {
+                    visited[x + 1 + (y + 1) * stride] = true;
                 }
             }
         }
-        Collection<Blob> blobs = new ArrayList<>();
+        Collection<Blob> preliminaryBlobs = new ArrayList<>();
         for(int x = 0; x < width; x++) {
             for(int y = 0; y < height; y++) {
-                if(!visited[x + 1][y + 1]) {
-                    LongAdder sumX = new LongAdder();
-                    LongAdder sumY = new LongAdder();
-                    LongAdder countAdder = new LongAdder();
+                if(primary.unsafe_get(x, y) != 0 && !visited[x + 1 + (y + 1) * stride]) {
                     visitQueue.add(x + 1 + (y + 1) * stride);
-                    traverse(visited, visitQueue, (matchX, matchY) -> {
-                        binary.unsafe_set(matchX - 1, matchY - 1, 1);
-                        sumX.add(matchX);
-                        //noinspection SuspiciousNameCombination
-                        sumY.add(matchY);
-                        countAdder.increment();
-                    });
-                    int count = countAdder.intValue();
-                    if(count > 64) {
-                        blobs.add(new Blob(sumX.intValue() / count, sumY.intValue() / count, count));
+                    int size = getPrimaryBlobSize(visited, visitQueue, stride);
+                    if(size > 16) {
+                        preliminaryBlobs.add(new Blob(x, y, size));
                     }
                 }
             }
         }
+        visited = buildVisitedMap(primary);
+        Collection<Blob> realBlobs = new ArrayList<>();
+        for(Blob blob : preliminaryBlobs) {
+            int minX = blob.getCenterX();
+            int maxX = blob.getCenterX();
+            int minY = blob.getCenterY();
+            int maxY = blob.getCenterY();
+            visitQueue.add(blob.getCenterX() + 1 + (blob.getCenterY() + 1) * stride);
+            int sumX = 0;
+            int sumY = 0;
+            int size = 0;
+            while(true) {
+                Integer position = visitQueue.poll();
+                if(position == null) {
+                    break;
+                }
+                if(visited[position]) {
+                    continue;
+                }
+                int x = (position - 1) % stride;
+                int y = (position - 1) / stride - 1;
+                sumX += x;
+                sumY += y;
+                size++;
+                minX = Math.min(x, minX);
+                maxX = Math.max(x, maxX);
+                minY = Math.min(y, minY);
+                maxY = Math.max(y, maxY);
+                visited[position] = true;
+                float currentCertainty = certaintyMap.unsafe_get(x, y);
+                int moves[] = {-1, 0, 1, 0, 0, -1, 0, 1};
+                for(int i = 0; i < 4; i++) {
+                    float nextCertainty = certaintyMap.unsafe_get(x + moves[i * 2], y + moves[i * 2 + 1]);
+                    if(currentCertainty - nextCertainty < 0.5f) {
+                        int newPosition = position + moves[i * 2] + moves[i * 2 + 1] * stride;
+                        if(!visited[newPosition]) {
+                            visitQueue.add(newPosition);
+                        }
+                    }
+                }
+            }
+            realBlobs.add(new Blob(sumX / size, sumY / size, size));
+        }
         log.debug("Image processing took " + (System.currentTimeMillis() - startTime) + " ms");
-        return blobs;
+        return realBlobs;
     }
 
-    private static void traverse(boolean[][] visited, Queue<Integer> visitQueue,
-                                BiConsumer<Integer, Integer> matchConsumer) {
-        int stride = visited.length;
+    private static int getPrimaryBlobSize(boolean[] visited, Queue<Integer> visitQueue, int stride) {
+        int size = 0;
         while(true) {
             Integer position = visitQueue.poll();
             if(position == null) {
                 break;
             }
-            int x = position % stride;
-            int y = position / stride;
-            if(visited[x][y]) {
+            if(visited[position]) {
                 continue;
             }
-            visited[x][y] = true;
-            if(matchConsumer != null) {
-                matchConsumer.accept(x, y);
-            }
-            if(!visited[x - 1][y]) {
-                visitQueue.add(position - 1);
-            }
-            if(!visited[x + 1][y]) {
-                visitQueue.add(position + 1);
-            }
-            if(!visited[x][y - 1]) {
-                visitQueue.add(position - stride);
-            }
-            if(!visited[x][y + 1]) {
-                visitQueue.add(position + stride);
+            size++;
+            visited[position] = true;
+            for(int move : new int[] {-1, 1, -stride, stride}) {
+                if(!visited[position + move]) {
+                    visitQueue.add(position + move);
+                }
             }
         }
+        return size;
     }
 
-    private static boolean[][] buildVisitedMap(GrayU8 image) {
+    private static boolean[] buildVisitedMap(GrayU8 image) {
         int width = image.getWidth();
         int height = image.getHeight();
-        boolean[][] visited = new boolean[width + 2][height + 2];
+        int stride = width + 2;
+        boolean[] visited = new boolean[(width + 2) * (height + 2)];
         for(int x = 0; x < width + 2; x++) {
-            visited[x][0] = true;
-            visited[x][height + 1] = true;
+            visited[x] = true;
+            visited[x + (height + 1) * stride] = true;
         }
         for(int y = 1; y <= height; y++) {
-            visited[0][y] = true;
-            visited[width + 1][y] = true;
+            visited[y * stride] = true;
+            visited[width + 1 + y * stride] = true;
         }
         for(int x = 0; x < width; x++) {
             for(int y = 0; y < height; y++) {
-                visited[x + 1][y + 1] = image.unsafe_get(x, y) > 0;
+                visited[x + 1 + (y + 1) * stride] = image.unsafe_get(x, y) > 0;
             }
         }
         return visited;
