@@ -4,18 +4,20 @@ import boofcv.alg.filter.binary.ThresholdImageOps;
 import boofcv.struct.image.GrayF32;
 import boofcv.struct.image.GrayU8;
 import boofcv.struct.image.Planar;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Queue;
-import java.util.concurrent.atomic.LongAdder;
+import java.util.*;
 
 @Slf4j
 public class ImageProcessor {
 
-    private static final float ORANGE_HUE = AngleUtil.toRadians(15.0f);
+    private static final float ORANGE_HUE = AngleUtil.toRadians(10.0f);
+
+    private static long hueSum = 0;
+    private static long saturationSum = 0;
+    private static long valueSum = 0;
+    private static long hueDistanceSum = 0;
 
     private ImageProcessor() {}
 
@@ -26,25 +28,73 @@ public class ImageProcessor {
         return Math.min(Math.abs(hue1 - hue2), Math.min(hue1, hue2) + 2 * (float) Math.PI - hue2);
     }
 
+    @SneakyThrows
     public static GrayF32 generateCertaintyMap(Planar<GrayF32> hsv) {
         GrayF32 hue = hsv.getBand(0);
         GrayF32 saturation = hsv.getBand(1);
         GrayF32 value = hsv.getBand(2);
-        GrayF32 certainty = saturation.createSameShape();
-        for(int x = 0; x < hue.getWidth(); x++) {
-            for(int y = 0; y < hue.getHeight(); y++) {
-                float expectedHueDistance = AngleUtil.toRadians(pow(10.0f - value.unsafe_get(x, y) / 25.5f, 2.25f));
-                float hueDistance = hueDistance(hue.unsafe_get(x, y), ORANGE_HUE);
-                float hueError = Math.abs(hueDistance - expectedHueDistance);
-                float hueCertainty = Math.max(1.0f - pow(hueError * 2.5f, 2.25f), 0.0f);
-                float saturationCertainty = limit(0.0f, 1.0f, 4 * saturation.unsafe_get(x, y) - 1.5f);
-                float valueCertainty = limit(0.0f, 1.0f, 4 * saturation.unsafe_get(x, y) - 1.0f);
-                float hueDistanceCertainty = Math.max(1.0f - pow(hueDistance, 2.25f) * 1.5f, 0.0f);
-                float certaintyValue = hueCertainty * saturationCertainty * valueCertainty * hueDistanceCertainty;
-                certainty.unsafe_set(x, y, 255.0f * certaintyValue);
+        GrayF32 certainty = hue.createSameShape();
+        long startTime = System.currentTimeMillis();
+        long innerTimeSum = 0;
+        hueSum = 0;
+        saturationSum = 0;
+        valueSum = 0;
+        hueDistanceSum = 0;
+        for(int y = 0; y < certainty.height; y++) {
+            int startPos = certainty.startIndex + y * certainty.stride;
+            for(int pos = startPos; pos < startPos + certainty.width; pos++) {
+                float hueValue = hue.data[pos];
+                float saturationValue = saturation.data[pos];
+                float valueValue = value.data[pos];
+                long startTimeInner = System.currentTimeMillis();
+                float certaintyValue = 255.0f * calculateCertainty(hueValue, saturationValue,
+                                                                   valueValue);
+                innerTimeSum += System.currentTimeMillis() - startTimeInner;
+                certainty.data[pos] = certaintyValue;
             }
         }
+        log.debug("hue: " + hueSum + " ms");
+        log.debug("saturation: " + saturationSum + " ms");
+        log.debug("value: " + valueSum + " ms");
+        log.debug("hueDistance: " + hueDistanceSum + " ms");
+        log.debug("generateCertaintyMap() new took " + (System.currentTimeMillis() - startTime) + " ms");
         return certainty;
+    }
+
+    public static float calculateCertainty(float hue, float saturation, float value) {
+        float hueDistance = hueDistance(hue, ORANGE_HUE);
+        float result = 1.0f;
+        long startTime = System.currentTimeMillis();
+        result *= getHueCertainty(value, hueDistance);
+        hueSum += System.currentTimeMillis() - startTime;
+        startTime = System.currentTimeMillis();
+        result *= getSaturationCertainty(saturation);
+        saturationSum += System.currentTimeMillis() - startTime;
+        startTime = System.currentTimeMillis();
+        result *= getValueCertainty(value);
+        valueSum += System.currentTimeMillis() - startTime;
+        startTime = System.currentTimeMillis();
+        result *= getHueDistanceCertainty(hueDistance);
+        hueDistanceSum += System.currentTimeMillis() - startTime;
+        return result;
+    }
+
+    private static float getHueDistanceCertainty(float hueDistance) {
+        return Math.max(1.0f - square(hueDistance) * 1.0f, 0.0f);
+    }
+
+    private static float getValueCertainty(float value) {
+        return limit(0.0f, 1.0f, 4.0f * value - 1.0f);
+    }
+
+    private static float getSaturationCertainty(float saturation) {
+        return limit(0.0f, 1.0f, 4.0f * saturation - 1.5f);
+    }
+
+    private static float getHueCertainty(float value, float hueDistance) {
+        float expectedHueDistance = AngleUtil.toRadians(square(10.0f - value / 25.5f));
+        float hueError = Math.abs(hueDistance - expectedHueDistance);
+        return Math.max(1.0f - square(hueError * 2.25f), 0.0f);
     }
 
     public static Collection<Blob> findBlobs(GrayF32 certaintyMap) {
@@ -53,9 +103,9 @@ public class ImageProcessor {
         int width = primary.getWidth();
         int height = primary.getHeight();
         int stride = width + 2;
-        boolean[] visited = buildVisitedMap(primary);
+        boolean[] visitedTemplate = buildVisitedMap(primary);
+        boolean[] visited = Arrays.copyOf(visitedTemplate, visitedTemplate.length);
         Queue<Integer> visitQueue = new ArrayDeque<>();
-        int a = 0;
         for(int x = 0; x < width; x++) {
             for(int y = 0; y < height; y++) {
                 if(primary.unsafe_get(x, y) == 0) {
@@ -75,9 +125,12 @@ public class ImageProcessor {
                 }
             }
         }
-        visited = buildVisitedMap(primary);
+
+        System.arraycopy(visitedTemplate, 0, visited, 0, visited.length);
+        boolean[] localVisited = new boolean[visited.length];
         Collection<Blob> realBlobs = new ArrayList<>();
         for(Blob blob : preliminaryBlobs) {
+            System.arraycopy(visitedTemplate, 0, localVisited, 0, localVisited.length);
             int minX = blob.getCenterX();
             int maxX = blob.getCenterX();
             int minY = blob.getCenterY();
@@ -96,6 +149,7 @@ public class ImageProcessor {
                 }
                 int x = (position - 1) % stride;
                 int y = (position - 1) / stride - 1;
+                certaintyMap.unsafe_set(x, y, 255.0f);
                 sumX += x;
                 sumY += y;
                 size++;
@@ -104,6 +158,7 @@ public class ImageProcessor {
                 minY = Math.min(y, minY);
                 maxY = Math.max(y, maxY);
                 visited[position] = true;
+                localVisited[position] = true;
                 int moves[] = {-1, 0, 1, 0, 0, -1, 0, 1};
                 for(int i = 0; i < 4; i++) {
                     int newPosition = position + moves[i * 2] + moves[i * 2 + 1] * stride;
@@ -111,15 +166,56 @@ public class ImageProcessor {
                         float nextCertainty = certaintyMap.unsafe_get(x + moves[i * 2], y + moves[i * 2 + 1]);
                         if(nextCertainty > 0.5f) {
                             visitQueue.add(newPosition);
+                        } else {
+                            visited[newPosition] = true;
                         }
                     }
                 }
             }
             if(size > 64) { // size may be zero
+                for(int x = minX + 1; x <= maxX + 1; x++) {
+                    localVisited[x + minY * stride] = true;
+                    localVisited[x + (maxY + 2) * stride] = true;
+
+                }
+                for(int y = minY + 1; y <= maxY + 1; y++) {
+                    localVisited[minX + y * stride] = true;
+                    localVisited[maxX + 2 + y * stride] = true;
+                }
+                visitQueue.add(minX + 1 + (minY + 1) * stride);
+                visitQueue.add(maxX + 1 + (minY + 1) * stride);
+                visitQueue.add(minX + 1 + (maxY + 1) * stride);
+                visitQueue.add(maxX + 1 + (maxY + 1) * stride);
+                while(true) {
+                    Integer position = visitQueue.poll();
+                    if(position == null) {
+                        break;
+                    }
+                    if(localVisited[position]) {
+                        continue;
+                    }
+                    localVisited[position] = true;
+                    int[] moves = {-1, 1, -stride, stride};
+                    for(int move : moves) {
+                        if(!localVisited[position + move]) {
+                            visitQueue.add(position + move);
+                        }
+                    }
+                }
+                for(int x = minX; x <= maxX; x++) {
+                    for(int y = minY; y <= maxY; y++) {
+                        if(!localVisited[x + 1 + (y + 1) * stride]) {
+                            sumX += x;
+                            sumY += y;
+                            size++;
+                            certaintyMap.unsafe_set(x, y, 255.0f);
+                        }
+                    }
+                }
                 realBlobs.add(new Blob(sumX / size, sumY / size, size));
             }
         }
-        log.debug("Image processing took " + (System.currentTimeMillis() - startTime) + " ms");
+        log.debug("findBlobs() took " + (System.currentTimeMillis() - startTime) + " ms");
         return realBlobs;
     }
 
@@ -170,8 +266,8 @@ public class ImageProcessor {
         return 0.0f;
     }
 
-    private static float pow(float a, float b) {
-        return (float) Math.pow(a, b);
+    private static float square(float a) {
+        return a * a;
     }
 
     private static float limit(float min, float max, float value) {
