@@ -4,6 +4,10 @@ import boofcv.io.webcamcapture.UtilWebcamCapture;
 import ee.ut.physics.digi.tbd.robot.kernel.BallDetectorKernel;
 import ee.ut.physics.digi.tbd.robot.kernel.RgbToHsvConverterKernel;
 import ee.ut.physics.digi.tbd.robot.kernel.ThresholderKernel;
+import ee.ut.physics.digi.tbd.robot.mainboard.Direction;
+import ee.ut.physics.digi.tbd.robot.mainboard.Mainboard;
+import ee.ut.physics.digi.tbd.robot.mainboard.MainboardMock;
+import ee.ut.physics.digi.tbd.robot.mainboard.Motor;
 import ee.ut.physics.digi.tbd.robot.model.BinaryImage;
 import ee.ut.physics.digi.tbd.robot.model.ColoredImage;
 import ee.ut.physics.digi.tbd.robot.model.GrayscaleImage;
@@ -21,6 +25,7 @@ public class Robot implements Runnable {
     private static final boolean DEBUG = true;
 
     private DebugWindow debugWindow;
+    private final Mainboard mainboard;
     private final CameraReader cameraReader;
     private final RgbToHsvConverterKernel rgbToHsvConverterKernel;
     private final BallDetectorKernel ballDetectorKernel;
@@ -30,6 +35,7 @@ public class Robot implements Runnable {
         if(isDebug()) {
             debugWindow = DebugWindow.getInstance();
         }
+        mainboard = new MainboardMock();
         cameraReader = new CameraReader(UtilWebcamCapture.openDevice(cameraName, width, height));
         rgbToHsvConverterKernel = new RgbToHsvConverterKernel(width, height);
         ballDetectorKernel = new BallDetectorKernel(width, height);
@@ -53,6 +59,7 @@ public class Robot implements Runnable {
             long startTime = System.currentTimeMillis();
             loop(rgbImage);
             log.debug("Loop took " + (System.currentTimeMillis() - startTime) + " ms");
+            //Thread.sleep(1000);
             if(isDebug()) {
                 Platform.runLater(debugWindow::render);
             }
@@ -66,66 +73,26 @@ public class Robot implements Runnable {
         debugWindow.setImage(ImagePanel.MUTATED1, certaintyMap, "Certainty map");
         BinaryImage maxCertainty = thresholderKernel.threshold(certaintyMap, 205, 255);
         debugWindow.setImage(ImagePanel.MUTATED2, maxCertainty, "Max certainty");
-        Collection<Blob> blobs;
-    }
-
-  /*  public void loop(BufferedImage original) {
-
-        Planar<GrayF32> hsv = ImageConverterUtil.getHsvImage(original);
-        setDebugImage(ImagePanel.ORIGINAL, hsv, "Original");
-        GrayF32 certaintyMap = ImageProcessor.generateCertaintyMap(hsv);
-        setDebugImage(ImagePanel.MUTATED2, certaintyMap, "Certainty map");
-
-        GrayU8 maxCertainty = ThresholdImageOps.threshold(certaintyMap, null, 255.0f * 0.5f, false);
-        maxCertainty = BinaryImageOps.dilate8(maxCertainty, 1, null);
-        setDebugImage(ImagePanel.MUTATED5, maxCertainty, "Max Certainty");
-
-        Collection<Blob> blobs = ImageProcessor.findBlobsAndFillHoles(maxCertainty);
-        setDebugImage(ImagePanel.MUTATED4, maxCertainty, "Max Certainty filled");
-
-
-        Graphics2D g2 = original.createGraphics();
-        g2.setStroke(new BasicStroke(2));
-        g2.setColor(Color.RED);
+        Collection<Blob> blobs = BallDetector.findBalls(certaintyMap, maxCertainty);
         for(Blob blob : blobs) {
-            float radius = (float) Math.sqrt(blob.getSize() / Math.PI);
-            g2.draw(new Ellipse2D.Float(blob.getCenterX() - radius, blob.getCenterY() - radius,
-                                        radius * 2, radius * 2));
-            String text = String.format("%dx%d: %d", blob.getCenterX(), blob.getCenterY(), blob.getSize());
-            g2.drawChars(text.toCharArray(), 0, text.length(),
-                         (int) (blob.getCenterX() + radius), (int) (blob.getCenterY() - radius));
+            if(300 < blob.getCenterX() && blob.getCenterX() < 340) {
+                moveForward();
+                return;
+            }
         }
-        setDebugImage(ImagePanel.MUTATED3, original, "Detections");
-
-        GrayU8 binary = ThresholdImageOps.threshold(hsv.getBand(1), null, 0.8f, false);
-        binary = BinaryImageOps.erode8(binary, 2, null);
-        binary = BinaryImageOps.dilate8(binary, 2, null);
-        setDebugImage(ImagePanel.MUTATED1, binary, "Thresholded");
-
+        turnRight();
     }
 
-    private void setDebugImage(ImagePanel target, GrayU8 image, String label) {
-        if(isDebug()) {
-            debugWindow.setImage(target, ImageConverterUtil.getImage(image), label);
-        }
+    private void turnRight() {
+        mainboard.setSpeed(Motor.LEFT, 0.1f, Direction.BACK);
+        mainboard.setSpeed(Motor.RIGHT, 0.1f, Direction.FORWARD);
+        mainboard.setSpeed(Motor.BACK, 0.1f, Direction.RIGHT);
     }
 
-    private void setDebugImage(ImagePanel target, GrayF32 image, String label) {
-        if(isDebug()) {
-            debugWindow.setImage(target, ImageConverterUtil.getImage(image), label);
-        }
+    private void moveForward() {
+        mainboard.setSpeed(Motor.LEFT, 0.1f, Direction.FORWARD);
+        mainboard.setSpeed(Motor.RIGHT, 0.1f, Direction.FORWARD);
+        mainboard.setSpeed(Motor.BACK, 0.0f, Direction.NONE);
     }
 
-    private void setDebugImage(ImagePanel target, Planar<GrayF32> image, String label) {
-        if(isDebug()) {
-            debugWindow.setImage(target, ImageConverterUtil.getImage(image), label);
-        }
-    }
-
-    private void setDebugImage(ImagePanel target, BufferedImage image, String label) {
-        if(isDebug()) {
-            debugWindow.setImage(target, image, label);
-        }
-    }
-*/
 }

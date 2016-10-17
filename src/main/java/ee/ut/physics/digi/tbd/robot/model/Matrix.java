@@ -9,6 +9,14 @@ public interface Matrix {
         return getStartIndex() + x + y * getStride();
     }
 
+    default int getX(int index) {
+        return (index - getStartIndex()) % getStride();
+    }
+
+    default int getY(int index) {
+        return (index - getStartIndex()) / getStride();
+    }
+
     default int getStartIndex() {
         return 0;
     }

@@ -4,8 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>ee.ut.physics.digi.soberstudents</groupId>
-    <artifactId>soberrobot</artifactId>
+    <groupId>ee.ut.physics.digi.tbd</groupId>
+    <artifactId>robot</artifactId>
     <version>1.0-SNAPSHOT</version>
     <build>
         <plugins>
@@ -15,6 +15,22 @@
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.5.0</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <mainClass>ee.ut.physics.digi.tbd.robot.Robot</mainClass>
                 </configuration>
             </plugin>
         </plugins>
@@ -57,6 +73,13 @@
             <artifactId>jocl</artifactId>
             <version>2.3.1</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.jogamp.jocl</groupId>
+            <artifactId>jocl-main</artifactId>
+            <version>2.3.1</version>
+        </dependency>
+
 
         <dependency>
             <groupId>org.jogamp.gluegen</groupId>
