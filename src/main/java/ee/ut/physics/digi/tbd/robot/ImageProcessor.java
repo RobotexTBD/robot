@@ -3,8 +3,12 @@ package ee.ut.physics.digi.tbd.robot;
 import boofcv.struct.image.GrayF32;
 import boofcv.struct.image.GrayU8;
 import boofcv.struct.image.Planar;
+import com.jogamp.opencl.*;
+import ee.ut.physics.digi.tbd.robot.util.AngleUtil;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.IOException;
+import java.nio.IntBuffer;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -15,7 +19,7 @@ import java.util.function.BiConsumer;
 @Slf4j
 public class ImageProcessor {
 
-    private static final float ORANGE_HUE = AngleUtil.toRadians(18.0f);
+    private static final float ORANGE_HUE = AngleUtil.toRadians(24.0f);
 
     private ImageProcessor() {}
 
@@ -27,22 +31,64 @@ public class ImageProcessor {
     }
 
     public static GrayF32 generateCertaintyMap(Planar<GrayF32> hsv) {
+
         GrayF32 hue = hsv.getBand(0);
         GrayF32 saturation = hsv.getBand(1);
         GrayF32 value = hsv.getBand(2);
         GrayF32 certainty = saturation.createSameShape();
-        for(int x = 0; x < hue.getWidth(); x++) {
+
+        CLContext context = CLContext.create();
+
+        try {
+            CLDevice device = context.getMaxFlopsDevice();
+            CLCommandQueue queue = device.createCommandQueue();
+
+            int elementCount = hue.getWidth() * hue.getHeight();
+            int localWorkSize = 64;
+
+            ClassLoader classLoader = ImageProcessor.class.getClassLoader();
+            CLProgram program = context.createProgram(classLoader.getResourceAsStream("ballCertaintyMap.cl"))
+                                       .build();
+
+            CLBuffer<IntBuffer> inputBuffer = context.createIntBuffer(elementCount, CLMemory.Mem.READ_ONLY);
+            CLBuffer<IntBuffer> outputBuffer = context.createIntBuffer(elementCount, CLMemory.Mem.WRITE_ONLY);
+
             for(int y = 0; y < hue.getHeight(); y++) {
-                float expectedHueDistance = AngleUtil.toRadians(pow(10.0f - value.unsafe_get(x, y) / 25.5f, 2.25f));
-                float hueDistance = hueDistance(hue.unsafe_get(x, y), ORANGE_HUE);
-                float hueError = Math.abs(hueDistance - expectedHueDistance);
-                float hueCertainty = Math.max(1.0f - pow(hueError * 2.5f, 2.25f), 0.0f);
-                float saturationCertainty = limit(0.0f, 1.0f, 4 * saturation.unsafe_get(x, y) - 1.5f);
-                float valueCertainty = limit(0.0f, 1.0f, 4 * saturation.unsafe_get(x, y) - 1.0f);
-                float hueDistanceCertainty = Math.max(1.0f - pow(hueDistance, 2.25f) * 1.5f, 0.0f);
-                float certaintyValue = hueCertainty * saturationCertainty * valueCertainty * hueDistanceCertainty;
-                certainty.unsafe_set(x, y, 255.0f * certaintyValue);
+                for(int x = 0; x < hue.getWidth(); x++) {
+                    int hueValue = (int) AngleUtil.toDegrees(hue.unsafe_get(x, y)) / 2;
+                    int saturationValue = (int) saturation.unsafe_get(x, y);
+                    int valueValue = (int) value.unsafe_get(x, y);
+                    int packed = hueValue << 16 | saturationValue << 8 | valueValue;
+                    inputBuffer.getBuffer().put(packed);
+                }
             }
+
+            inputBuffer.getBuffer().rewind();
+
+            CLKernel kernel = program.createCLKernel("ballCertaintyKernel");
+            kernel.putArgs(inputBuffer, outputBuffer).putArg(elementCount);
+
+            int minValue = Integer.MAX_VALUE;
+            int maxValue = Integer.MIN_VALUE;
+
+            queue.putWriteBuffer(inputBuffer, true)
+                 .put1DRangeKernel(kernel, 0, elementCount, localWorkSize)
+                 .putReadBuffer(outputBuffer, true);
+            for(int y = 0; y < hue.getHeight(); y++) {
+                for(int x = 0; x < hue.getWidth(); x++) {
+                    int i = outputBuffer.getBuffer().get();
+                    minValue = Math.min(minValue, i);
+                    maxValue = Math.max(maxValue, i);
+                    certainty.unsafe_set(x, y, 2 * (float) i - 255.0f);
+                }
+            }
+            System.out.println(minValue + " " + maxValue);
+
+        } catch(IOException e) {
+            e.printStackTrace();
+        } finally {
+            // cleanup all resources associated with this context.
+            context.release();
         }
         return certainty;
     }
@@ -166,5 +212,15 @@ public class ImageProcessor {
         return Math.min(Math.max(value, min), max);
     }
 
+
+
+    private static int roundUp(int groupSize, int globalSize) {
+        int r = globalSize % groupSize;
+        if (r == 0) {
+            return globalSize;
+        } else {
+            return globalSize + groupSize - r;
+        }
+    }
 
 }

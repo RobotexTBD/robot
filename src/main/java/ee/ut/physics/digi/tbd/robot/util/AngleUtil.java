@@ -1,4 +1,4 @@
-package ee.ut.physics.digi.tbd.robot;
+package ee.ut.physics.digi.tbd.robot.util;
 
 public class AngleUtil {
 

@@ -1,22 +1,20 @@
 package ee.ut.physics.digi.tbd.robot;
 
+import ee.ut.physics.digi.tbd.robot.model.Image;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.embed.swing.SwingFXUtils;
-import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import javafx.stage.Stage;
 import lombok.SneakyThrows;
 
-import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.util.*;
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 public class DebugWindow extends Application {
@@ -24,7 +22,7 @@ public class DebugWindow extends Application {
     private static DebugWindow instance;
     private static final CountDownLatch latch = new CountDownLatch(1);
 
-    private Map<ImagePanel, Image> images = new EnumMap<>(ImagePanel.class);
+    private Map<ImagePanel, WritableImage> images = new EnumMap<>(ImagePanel.class);
     private Map<ImagePanel, String> labels = new EnumMap<>(ImagePanel.class);
     private Parent scene;
 
@@ -43,19 +41,8 @@ public class DebugWindow extends Application {
         latch.countDown();
     }
 
-    public void setImage(ImagePanel target, BufferedImage image, String label) {
-        WritableImage writableImage = new WritableImage(image.getWidth(), image.getHeight());
-        SwingFXUtils.toFXImage(image, writableImage);
-        images.put(target, writableImage);
-        if(label != null) {
-            labels.put(target, label);
-        } else {
-            labels.remove(target);
-        }
-    }
-
     public void setImage(ImagePanel target, Image image, String label) {
-        images.put(target, image);
+        images.put(target, image.toWritableImage());
         if(label != null) {
             labels.put(target, label);
         } else {
