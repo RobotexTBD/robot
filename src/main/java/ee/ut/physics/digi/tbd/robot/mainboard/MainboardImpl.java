@@ -13,7 +13,7 @@ public class MainboardImpl implements Mainboard {
 
     private static final String portName = "COM3";
     private static final int MAX_SPEED = 255;
-    public final SerialPort serialPort;
+    private final SerialPort serialPort;
 
     public MainboardImpl() {
         serialPort = Arrays.stream(SerialPort.getCommPorts())

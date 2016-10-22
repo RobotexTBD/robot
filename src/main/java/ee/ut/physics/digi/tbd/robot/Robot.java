@@ -53,13 +53,12 @@ public class Robot implements Runnable {
     @Override
     @SneakyThrows
     public void run() {
-        BufferedReader a = new BufferedReader(new InputStreamReader(((MainboardImpl)mainboard).serialPort.getInputStream()));
         while(true) {
             ColoredImage rgbImage = cameraReader.readRgbImage();
             long startTime = System.currentTimeMillis();
             loop(rgbImage);
-            //log.debug("Loop took " + (System.currentTimeMillis() - startTime) + " ms");
-            //Thread.sleep(1000);
+            log.debug("Loop took " + (System.currentTimeMillis() - startTime) + " ms");
+            Thread.sleep(1000);
             if(isDebug()) {
                 Platform.runLater(debugWindow::render);
             }
