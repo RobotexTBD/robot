@@ -4,10 +4,7 @@ import boofcv.io.webcamcapture.UtilWebcamCapture;
 import ee.ut.physics.digi.tbd.robot.kernel.BallDetectorKernel;
 import ee.ut.physics.digi.tbd.robot.kernel.RgbToHsvConverterKernel;
 import ee.ut.physics.digi.tbd.robot.kernel.ThresholderKernel;
-import ee.ut.physics.digi.tbd.robot.mainboard.Direction;
-import ee.ut.physics.digi.tbd.robot.mainboard.Mainboard;
-import ee.ut.physics.digi.tbd.robot.mainboard.MainboardMock;
-import ee.ut.physics.digi.tbd.robot.mainboard.Motor;
+import ee.ut.physics.digi.tbd.robot.mainboard.*;
 import ee.ut.physics.digi.tbd.robot.model.BinaryImage;
 import ee.ut.physics.digi.tbd.robot.model.ColoredImage;
 import ee.ut.physics.digi.tbd.robot.model.GrayscaleImage;
@@ -16,7 +13,9 @@ import javafx.application.Platform;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Collection;
 
 @Slf4j
@@ -35,7 +34,7 @@ public class Robot implements Runnable {
         if(isDebug()) {
             debugWindow = DebugWindow.getInstance();
         }
-        mainboard = new MainboardMock();
+        mainboard = new MainboardImpl();
         cameraReader = new CameraReader(UtilWebcamCapture.openDevice(cameraName, width, height));
         rgbToHsvConverterKernel = new RgbToHsvConverterKernel(width, height);
         ballDetectorKernel = new BallDetectorKernel(width, height);
@@ -54,11 +53,12 @@ public class Robot implements Runnable {
     @Override
     @SneakyThrows
     public void run() {
+        BufferedReader a = new BufferedReader(new InputStreamReader(((MainboardImpl)mainboard).serialPort.getInputStream()));
         while(true) {
             ColoredImage rgbImage = cameraReader.readRgbImage();
             long startTime = System.currentTimeMillis();
             loop(rgbImage);
-            log.debug("Loop took " + (System.currentTimeMillis() - startTime) + " ms");
+            //log.debug("Loop took " + (System.currentTimeMillis() - startTime) + " ms");
             //Thread.sleep(1000);
             if(isDebug()) {
                 Platform.runLater(debugWindow::render);
@@ -75,7 +75,7 @@ public class Robot implements Runnable {
         debugWindow.setImage(ImagePanel.MUTATED2, maxCertainty, "Max certainty");
         Collection<Blob> blobs = BallDetector.findBalls(certaintyMap, maxCertainty);
         for(Blob blob : blobs) {
-            if(300 < blob.getCenterX() && blob.getCenterX() < 340) {
+            if(260 < blob.getCenterX() && blob.getCenterX() < 380) {
                 moveForward();
                 return;
             }
@@ -84,14 +84,18 @@ public class Robot implements Runnable {
     }
 
     private void turnRight() {
-        mainboard.setSpeed(Motor.LEFT, 0.1f, Direction.BACK);
-        mainboard.setSpeed(Motor.RIGHT, 0.1f, Direction.FORWARD);
-        mainboard.setSpeed(Motor.BACK, 0.1f, Direction.RIGHT);
+        log.warn("TURN RIGHT!");
+        float speed = 0.5f;
+        mainboard.setSpeed(Motor.LEFT, speed, Direction.BACK);
+        mainboard.setSpeed(Motor.RIGHT, speed, Direction.FORWARD);
+        mainboard.setSpeed(Motor.BACK, speed, Direction.RIGHT);
     }
 
     private void moveForward() {
-        mainboard.setSpeed(Motor.LEFT, 0.1f, Direction.FORWARD);
-        mainboard.setSpeed(Motor.RIGHT, 0.1f, Direction.FORWARD);
+        log.warn("MOVE FORWARD!");
+        float speed = 0.5f;
+        mainboard.setSpeed(Motor.LEFT, speed, Direction.FORWARD);
+        mainboard.setSpeed(Motor.RIGHT, speed, Direction.FORWARD);
         mainboard.setSpeed(Motor.BACK, 0.0f, Direction.NONE);
     }
 
