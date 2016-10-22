@@ -1,4 +1,4 @@
-package ee.ut.physics.digi.tbd.robot;
+package ee.ut.physics.digi.tbd.robot.debug;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -3,7 +3,7 @@ package ee.ut.physics.digi.tbd.robot.kernel;
 import com.jogamp.common.nio.Buffers;
 import com.jogamp.opencl.CLBuffer;
 import com.jogamp.opencl.CLMemory;
-import ee.ut.physics.digi.tbd.robot.model.ColoredImage;
+import ee.ut.physics.digi.tbd.robot.matrix.image.ColoredImage;
 
 import java.io.IOException;
 import java.nio.IntBuffer;

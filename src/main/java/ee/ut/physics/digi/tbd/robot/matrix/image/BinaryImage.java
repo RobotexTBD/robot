@@ -1,20 +1,20 @@
-package ee.ut.physics.digi.tbd.robot.model;
+package ee.ut.physics.digi.tbd.robot.matrix.image;
 
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import lombok.Getter;
 
 @Getter
-public class GrayscaleImage implements Image {
+public class BinaryImage implements Image {
 
     private final int width;
     private final int height;
-    private final int[] data;
+    private final boolean[] data;
 
-    public GrayscaleImage(int width, int height) {
+    public BinaryImage(int width, int height) {
         this.width = width;
         this.height = height;
-        data = new int[width * height];
+        this.data = new boolean[width * height];
     }
 
     @Override
@@ -24,7 +24,7 @@ public class GrayscaleImage implements Image {
         int index = 0;
         for(int y = 0; y < height; y++) {
             for(int x = 0; x < width; x++, index++) {
-                pixelWriter.setArgb(x, y, 0xFF000000 | data[index] << 16 | data[index] << 8 | data[index]);
+                pixelWriter.setArgb(x, y, data[index] ? 0xFFFFFFFF : 0xFF000000);
             }
         }
         return image;

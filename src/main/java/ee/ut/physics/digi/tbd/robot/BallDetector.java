@@ -1,8 +1,11 @@
 package ee.ut.physics.digi.tbd.robot;
 
-import ee.ut.physics.digi.tbd.robot.model.BinaryImage;
-import ee.ut.physics.digi.tbd.robot.model.GrayscaleImage;
-import ee.ut.physics.digi.tbd.robot.model.VisitedMap;
+import ee.ut.physics.digi.tbd.robot.kernel.BallDetectorKernel;
+import ee.ut.physics.digi.tbd.robot.kernel.ThresholderKernel;
+import ee.ut.physics.digi.tbd.robot.matrix.image.BinaryImage;
+import ee.ut.physics.digi.tbd.robot.matrix.image.ColoredImage;
+import ee.ut.physics.digi.tbd.robot.matrix.image.GrayscaleImage;
+import ee.ut.physics.digi.tbd.robot.matrix.VisitedMap;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -11,7 +14,21 @@ import java.util.Queue;
 
 public class BallDetector {
 
-    public static Collection<Blob> findBalls(GrayscaleImage certaintyMap, BinaryImage maxCertainty) {
+    private final BallDetectorKernel ballDetectorKernel;
+    private final ThresholderKernel thresholderKernel;
+
+    public BallDetector(BallDetectorKernel ballDetectorKernel, ThresholderKernel thresholderKernel) {
+        this.ballDetectorKernel = ballDetectorKernel;
+        this.thresholderKernel = thresholderKernel;
+    }
+
+    public Collection<Blob> findBalls(ColoredImage hsvImage) {
+        GrayscaleImage certaintyMap = ballDetectorKernel.generateCertaintyMap(hsvImage);
+        BinaryImage maxCertainty = thresholderKernel.threshold(certaintyMap, 205, 255);
+        return findBalls(certaintyMap, maxCertainty);
+    }
+
+    private Collection<Blob> findBalls(GrayscaleImage certaintyMap, BinaryImage maxCertainty) {
         Collection<Blob> balls = new ArrayList<>();
         VisitedMap visitedMap = new VisitedMap(certaintyMap.getWidth(), certaintyMap.getHeight());
         int visitedMapPos = visitedMap.getStartIndex();
@@ -32,7 +49,7 @@ public class BallDetector {
         return balls;
     }
 
-    private static Blob findBall(int visitedMapStartPos, VisitedMap visitedMap, BinaryImage maxCertainty) {
+    private Blob findBall(int visitedMapStartPos, VisitedMap visitedMap, BinaryImage maxCertainty) {
         Queue<Integer> visitQueue = new ArrayDeque<>();
         visitQueue.add(visitedMapStartPos);
         int count = 0;

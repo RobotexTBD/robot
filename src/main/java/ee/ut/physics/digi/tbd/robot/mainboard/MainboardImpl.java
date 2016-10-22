@@ -2,7 +2,9 @@ package ee.ut.physics.digi.tbd.robot.mainboard;
 
 
 import com.fazecast.jSerialComm.SerialPort;
-import lombok.SneakyThrows;
+import ee.ut.physics.digi.tbd.robot.mainboard.command.MainboardCommand;
+import ee.ut.physics.digi.tbd.robot.mainboard.command.MotorSpeedCommand;
+import ee.ut.physics.digi.tbd.robot.mainboard.command.MotorStopCommand;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -28,34 +30,37 @@ public class MainboardImpl implements Mainboard {
         log.info("Serial port opened");
     }
 
+
     @Override
-    @SneakyThrows
-    public void setSpeed(Motor motor, float speed, Direction direction) {
+    public void sendCommand(MainboardCommand command) {
         try {
-            String command = getSetSpeedCommandString(motor, speed, direction);
-            log.debug("Writing to serial port: \"" + command + "\"");
-            serialPort.getOutputStream().write((command + "\r\n").getBytes());
+            String commandString = getCommandString(command);
+            log.debug("Writing to serial port: \"" + commandString + "\"");
+            serialPort.getOutputStream().write((commandString + "\r\n").getBytes());
             serialPort.getOutputStream().flush();
-            Thread.sleep(100);
         } catch(IOException e) {
-            throw new IllegalStateException("Unable to send speed change command", e);
+            e.printStackTrace();
         }
     }
 
-    private String getSetSpeedCommandString(Motor motor, float speed, Direction direction) {
-        return "wl" + getMotorIdentifier(motor) +
-               String.valueOf(getTransformedSpeed(motor, speed, direction));
+    private String getCommandString(MainboardCommand command) {
+        if(command instanceof MotorSpeedCommand) {
+            MotorSpeedCommand speedCommand = (MotorSpeedCommand) command;
+            return String.format("wl%d%d\0", getMotorIdentifier(speedCommand.getMotor()),
+                                 getTransformedSpeed(speedCommand));
+        }
+        if(command instanceof MotorStopCommand) {
+            MotorStopCommand stopCommand = (MotorStopCommand) command;
+
+            return String.format("wl%d0\0", getMotorIdentifier(stopCommand.getMotor()));
+        }
+        throw new IllegalArgumentException("Handling of command type " + command.getClass().getSimpleName() +
+                                           " not implemented");
     }
 
-    private int getTransformedSpeed(Motor motor, float speed, Direction direction) {
-        if(direction == Direction.NONE) {
-            return 0;
-        }
-        int transformedSpeed = (int) (speed * MAX_SPEED);
-        if(isSpeedNegative(motor, direction)) {
-            return -transformedSpeed;
-        }
-        return transformedSpeed;
+    private int getTransformedSpeed(MotorSpeedCommand command) {
+        int transformedSpeed = (int) (command.getSpeed() * MAX_SPEED);
+        return isSpeedNegative(command.getMotor(), command.getDirection()) ? -transformedSpeed : transformedSpeed;
     }
 
     private boolean isSpeedNegative(Motor motor, Direction direction) {

@@ -1,4 +1,4 @@
-package ee.ut.physics.digi.tbd.robot.model;
+package ee.ut.physics.digi.tbd.robot.matrix;
 
 public interface Matrix {
 

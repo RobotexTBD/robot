@@ -1,6 +1,6 @@
-package ee.ut.physics.digi.tbd.robot;
+package ee.ut.physics.digi.tbd.robot.debug;
 
-import ee.ut.physics.digi.tbd.robot.model.Image;
+import ee.ut.physics.digi.tbd.robot.matrix.image.Image;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -22,8 +22,8 @@ public class DebugWindow extends Application {
     private static DebugWindow instance;
     private static final CountDownLatch latch = new CountDownLatch(1);
 
-    private Map<ImagePanel, WritableImage> images = new EnumMap<>(ImagePanel.class);
-    private Map<ImagePanel, String> labels = new EnumMap<>(ImagePanel.class);
+    private final Map<ImagePanel, WritableImage> images = new EnumMap<>(ImagePanel.class);
+    private final Map<ImagePanel, String> labels = new EnumMap<>(ImagePanel.class);
     private Parent scene;
 
     @SuppressWarnings("ConstantConditions")
