@@ -4,7 +4,7 @@ import ee.ut.physics.digi.tbd.robot.Settings;
 
 public class MainboardFactory {
 
-    private MainboardFactory instance;
+    private static MainboardFactory instance;
     private final Settings settings;
 
     private MainboardFactory() {
@@ -16,7 +16,7 @@ public class MainboardFactory {
                                                    new MainboardImpl();
     }
 
-    public MainboardFactory getInstance() {
+    public static MainboardFactory getInstance() {
         if(instance == null) {
             instance = new MainboardFactory();
         }

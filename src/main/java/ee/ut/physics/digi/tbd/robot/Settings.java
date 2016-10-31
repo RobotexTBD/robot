@@ -15,6 +15,7 @@ public class Settings {
     public static final String RADIO_PORT_KEY = "radio.port.name";
     public static final String WEBCAM_NAME_KEY = "webcam.name";
     public static final String MAINBOARD_USE_MOCK_KEY = "mainboard.useMock";
+    public static final String REFEREE_USE_MOCK_KEY = "referee.useMock";
     private static Settings instance;
     private Properties properties;
 
@@ -49,6 +50,10 @@ public class Settings {
 
     public boolean shouldUseMainboardMock() {
         return readBooleanProperty(MAINBOARD_USE_MOCK_KEY);
+    }
+
+    public boolean shouldUseRefereeMock() {
+        return readBooleanProperty(REFEREE_USE_MOCK_KEY);
     }
 
     private char readCharProperty(String key, String name) {

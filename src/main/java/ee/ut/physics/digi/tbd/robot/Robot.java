@@ -4,18 +4,18 @@ import boofcv.io.webcamcapture.UtilWebcamCapture;
 import com.fazecast.jSerialComm.SerialPort;
 import ee.ut.physics.digi.tbd.robot.debug.DebugWindow;
 import ee.ut.physics.digi.tbd.robot.debug.ImagePanel;
-import ee.ut.physics.digi.tbd.robot.kernel.BallDetectorKernel;
 import ee.ut.physics.digi.tbd.robot.kernel.ImageProcessorService;
-import ee.ut.physics.digi.tbd.robot.kernel.RgbToHsvConverterKernel;
-import ee.ut.physics.digi.tbd.robot.kernel.ThresholderKernel;
-import ee.ut.physics.digi.tbd.robot.mainboard.*;
+import ee.ut.physics.digi.tbd.robot.mainboard.Direction;
+import ee.ut.physics.digi.tbd.robot.mainboard.Mainboard;
+import ee.ut.physics.digi.tbd.robot.mainboard.MainboardFactory;
+import ee.ut.physics.digi.tbd.robot.mainboard.Motor;
 import ee.ut.physics.digi.tbd.robot.mainboard.command.MotorSpeedCommand;
 import ee.ut.physics.digi.tbd.robot.mainboard.command.MotorStopCommand;
 import ee.ut.physics.digi.tbd.robot.matrix.image.BinaryImage;
 import ee.ut.physics.digi.tbd.robot.matrix.image.ColoredImage;
 import ee.ut.physics.digi.tbd.robot.matrix.image.GrayscaleImage;
 import ee.ut.physics.digi.tbd.robot.referee.Referee;
-import ee.ut.physics.digi.tbd.robot.referee.RefereeImpl;
+import ee.ut.physics.digi.tbd.robot.referee.RefereeFactory;
 import ee.ut.physics.digi.tbd.robot.referee.RefereeListener;
 import ee.ut.physics.digi.tbd.robot.util.CameraReader;
 import javafx.application.Platform;
@@ -44,11 +44,11 @@ public class Robot implements Runnable {
             debugWindow = DebugWindow.getInstance();
         }
         logAvailableSerialPorts();
-        mainboard = new MainboardMock();
+        mainboard = MainboardFactory.getInstance().getMainboard();
         cameraReader = new CameraReader(UtilWebcamCapture.openDevice(cameraName, width, height));
         imageProcessorService = new ImageProcessorService(width, height);
         ballDetector = new BallDetector(imageProcessorService);
-        referee = new RefereeImpl();
+        referee = RefereeFactory.getInstance().getReferee();
     }
 
     private void logAvailableSerialPorts() {
