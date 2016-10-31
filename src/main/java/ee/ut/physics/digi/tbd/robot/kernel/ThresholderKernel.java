@@ -5,10 +5,12 @@ import com.jogamp.opencl.CLBuffer;
 import com.jogamp.opencl.CLMemory;
 import ee.ut.physics.digi.tbd.robot.matrix.image.BinaryImage;
 import ee.ut.physics.digi.tbd.robot.matrix.image.GrayscaleImage;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.IntBuffer;
 
+@Slf4j
 public class ThresholderKernel extends Kernel {
 
     private final int absoluteSize;
@@ -19,7 +21,7 @@ public class ThresholderKernel extends Kernel {
     private final CLBuffer<IntBuffer> outputBuffer;
 
     public ThresholderKernel(int width, int height) throws IOException {
-        super("threshold.cl", "thresholdKernel");
+        super("kernel/threshold.cl", "thresholdKernel");
         absoluteSize = width * height;
         localWorkgroupSize = Math.min(device.getMaxWorkGroupSize(), absoluteSize);
         globalWorkgroupSize = calculateGlobalWorkgroupSize(absoluteSize, localWorkgroupSize);
@@ -27,8 +29,12 @@ public class ThresholderKernel extends Kernel {
         outputBuffer = context.createBuffer(Buffers.newDirectIntBuffer(absoluteSize), CLMemory.Mem.READ_WRITE);
     }
 
+    public BinaryImage threshold(GrayscaleImage image, float min, float max, int maxValue) {
+        return threshold(image, (int) (maxValue * min), (int) (maxValue * max));
+    }
+
     public BinaryImage threshold(GrayscaleImage image, int min, int max) {
-            inputBuffer.getBuffer().put(image.getData()).rewind();
+        inputBuffer.getBuffer().put(image.getData()).rewind();
         kernel.putArgs(inputBuffer, outputBuffer)
               .putArg(min)
               .putArg(max)

@@ -2,44 +2,56 @@ package ee.ut.physics.digi.tbd.robot.mainboard;
 
 
 import com.fazecast.jSerialComm.SerialPort;
+import ee.ut.physics.digi.tbd.robot.Settings;
 import ee.ut.physics.digi.tbd.robot.mainboard.command.MainboardCommand;
 import ee.ut.physics.digi.tbd.robot.mainboard.command.MotorSpeedCommand;
 import ee.ut.physics.digi.tbd.robot.mainboard.command.MotorStopCommand;
+import ee.ut.physics.digi.tbd.robot.util.SerialUtil;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class MainboardImpl implements Mainboard {
 
-    private static final String portName = "COM3";
     private static final int MAX_SPEED = 255;
     private final SerialPort serialPort;
 
     public MainboardImpl() {
-        serialPort = Arrays.stream(SerialPort.getCommPorts())
-                           .filter(port -> port.getDescriptivePortName().contains(portName))
-                           .findFirst()
-                           .orElseThrow(() -> new IllegalStateException("Mainboard not connected or port not found"));
+        serialPort = SerialUtil.openPort(Settings.getInstance().getMainboardPortName());
         serialPort.setComPortParameters(19200, 8, SerialPort.ONE_STOP_BIT, SerialPort.NO_PARITY);
-        serialPort.setComPortTimeouts(SerialPort.TIMEOUT_NONBLOCKING, 0, 0);
-        if(!serialPort.openPort()) {
-            throw new IllegalStateException("Unable to open mainboard port");
-        }
-        log.info("Serial port opened");
+        serialPort.setComPortTimeouts(SerialPort.TIMEOUT_WRITE_BLOCKING, 0, 100);
     }
 
 
     @Override
+    @SneakyThrows
     public void sendCommand(MainboardCommand command) {
         try {
             String commandString = getCommandString(command);
-            log.debug("Writing to serial port: \"" + commandString + "\"");
-            serialPort.getOutputStream().write((commandString + "\r\n").getBytes());
+            log.debug("Writing to serial port: \"" + commandString + "\\n\"");
+            serialPort.getOutputStream().write((commandString + "\n").getBytes());
             serialPort.getOutputStream().flush();
         } catch(IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void sendCommandsBatch(MainboardCommand... commands) {
+        String batchCommand = Arrays.stream(commands)
+                                    .map(this::getCommandString)
+                                    .collect(Collectors.joining("\n")) + "\n";
+
+        log.debug("Writing to serial port: \"" + batchCommand.replace("\n", "\\n") + "\"");
+        try {
+            serialPort.getOutputStream().write((batchCommand).getBytes());
+            serialPort.getOutputStream().flush();
+        } catch(IOException e) {
+            log.error("Failed to write to mainboard", e);
         }
     }
 

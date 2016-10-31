@@ -5,10 +5,12 @@ import com.jogamp.opencl.CLBuffer;
 import com.jogamp.opencl.CLMemory;
 import ee.ut.physics.digi.tbd.robot.matrix.image.ColoredImage;
 import ee.ut.physics.digi.tbd.robot.matrix.image.GrayscaleImage;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.IntBuffer;
 
+@Slf4j
 public class BallDetectorKernel extends Kernel {
 
     private final int absoluteSize;
@@ -19,7 +21,7 @@ public class BallDetectorKernel extends Kernel {
     private final CLBuffer<IntBuffer> outputBuffer;
 
     public BallDetectorKernel(int width, int height) throws IOException {
-        super("ballCertaintyMap.cl", "ballCertaintyKernel");
+        super("kernel/ballCertaintyMap.cl", "ballCertaintyKernel");
         absoluteSize = width * height;
         localWorkgroupSize = Math.min(device.getMaxWorkGroupSize(), absoluteSize);
         globalWorkgroupSize = calculateGlobalWorkgroupSize(absoluteSize, localWorkgroupSize);

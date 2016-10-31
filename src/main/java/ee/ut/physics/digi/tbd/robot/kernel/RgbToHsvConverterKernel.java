@@ -4,10 +4,12 @@ import com.jogamp.common.nio.Buffers;
 import com.jogamp.opencl.CLBuffer;
 import com.jogamp.opencl.CLMemory;
 import ee.ut.physics.digi.tbd.robot.matrix.image.ColoredImage;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.IntBuffer;
 
+@Slf4j
 public class RgbToHsvConverterKernel extends Kernel {
 
     private final int absoluteSize;
@@ -18,7 +20,7 @@ public class RgbToHsvConverterKernel extends Kernel {
     private final CLBuffer<IntBuffer> outputBuffer;
 
     public RgbToHsvConverterKernel(int width, int height) throws IOException {
-        super("rgbToHsv.cl", "rgbToHsvKernel");
+        super("kernel/rgbToHsv.cl", "rgbToHsvKernel");
         absoluteSize = width * height;
         localWorkgroupSize = Math.min(device.getMaxWorkGroupSize(), absoluteSize);
         globalWorkgroupSize = calculateGlobalWorkgroupSize(absoluteSize, localWorkgroupSize);
