@@ -1,17 +1,18 @@
 package ee.ut.physics.digi.tbd.robot.util;
 
-public class AngleUtil {
+public final class AngleUtil {
 
     private static final float PI = (float) Math.PI;
+    public static final int HALF_CIRCLE_DEGREES = 180;
 
     private AngleUtil() {}
 
     public static float toDegrees(float radians) {
-        return radians * 180 / PI;
+        return radians * HALF_CIRCLE_DEGREES / PI;
     }
 
     public static float toRadians(float degrees) {
-        return degrees * PI / 180;
+        return degrees * PI / HALF_CIRCLE_DEGREES;
     }
 
 

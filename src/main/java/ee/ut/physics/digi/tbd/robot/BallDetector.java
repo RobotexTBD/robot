@@ -1,12 +1,9 @@
 package ee.ut.physics.digi.tbd.robot;
 
-import ee.ut.physics.digi.tbd.robot.kernel.BallDetectorKernel;
 import ee.ut.physics.digi.tbd.robot.kernel.ImageProcessorService;
-import ee.ut.physics.digi.tbd.robot.kernel.ThresholderKernel;
-import ee.ut.physics.digi.tbd.robot.matrix.image.BinaryImage;
+import ee.ut.physics.digi.tbd.robot.matrix.VisitedMap;
 import ee.ut.physics.digi.tbd.robot.matrix.image.ColoredImage;
 import ee.ut.physics.digi.tbd.robot.matrix.image.GrayscaleImage;
-import ee.ut.physics.digi.tbd.robot.matrix.VisitedMap;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayDeque;

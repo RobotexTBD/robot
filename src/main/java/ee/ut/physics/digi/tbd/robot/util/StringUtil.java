@@ -1,10 +1,8 @@
 package ee.ut.physics.digi.tbd.robot.util;
 
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.stream.Collectors;
 
-public class StringUtil {
+public final class StringUtil {
 
     private StringUtil() {}
 

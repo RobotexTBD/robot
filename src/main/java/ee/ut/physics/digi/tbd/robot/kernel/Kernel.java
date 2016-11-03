@@ -19,7 +19,7 @@ public abstract class Kernel {
         context = CLContext.create();
         device = context.getMaxFlopsDevice();
         commandQueue = device.createCommandQueue();
-        kernel = context.createProgram(getInputStream(kernelFileName))
+        kernel = context.createProgram(getInputStream("kernel/" + kernelFileName))
                         .build()
                         .createCLKernel(kernelName);
     }

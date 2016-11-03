@@ -2,7 +2,7 @@ package ee.ut.physics.digi.tbd.robot.referee;
 
 import ee.ut.physics.digi.tbd.robot.Settings;
 
-public class RefereeFactory {
+public final class RefereeFactory {
 
     private static RefereeFactory instance;
     private final Settings settings;

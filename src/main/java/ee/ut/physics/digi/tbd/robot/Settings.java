@@ -6,16 +6,17 @@ import java.io.IOException;
 import java.util.Properties;
 
 @Slf4j
-public class Settings {
+public final class Settings {
 
-    public static final String PROPERTIES_FILE_NAME = "application.properties";
-    public static final String FIELD_ID_KEY = "radio.field.id";
-    public static final String ROBOT_ID_KEY = "radio.robot.id";
-    public static final String MAINBOARD_PORT_KEY = "mainboard.port.name";
-    public static final String RADIO_PORT_KEY = "radio.port.name";
-    public static final String WEBCAM_NAME_KEY = "webcam.name";
-    public static final String MAINBOARD_USE_MOCK_KEY = "mainboard.useMock";
-    public static final String REFEREE_USE_MOCK_KEY = "referee.useMock";
+    private static final String PROPERTIES_FILE_NAME = "application.properties";
+    private static final String FIELD_ID_KEY = "radio.field.id";
+    private static final String ROBOT_ID_KEY = "radio.robot.id";
+    private static final String MAINBOARD_PORT_KEY = "mainboard.port.name";
+    private static final String RADIO_PORT_KEY = "radio.port.name";
+    private static final String WEBCAM_NAME_KEY = "webcam.name";
+    private static final String MAINBOARD_USE_MOCK_KEY = "mainboard.useMock";
+    private static final String REFEREE_USE_MOCK_KEY = "referee.useMock";
+    private static final String SHOW_DEBUG_WINDOW_KEY = "debug.showWindow";
     private static Settings instance;
     private Properties properties;
 
@@ -54,6 +55,10 @@ public class Settings {
 
     public boolean shouldUseRefereeMock() {
         return readBooleanProperty(REFEREE_USE_MOCK_KEY);
+    }
+
+    public boolean shouldShowDebugWindow() {
+        return readBooleanProperty(SHOW_DEBUG_WINDOW_KEY);
     }
 
     private char readCharProperty(String key, String name) {

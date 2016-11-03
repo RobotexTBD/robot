@@ -4,14 +4,13 @@ import com.jogamp.common.nio.Buffers;
 import com.jogamp.opencl.CLBuffer;
 import com.jogamp.opencl.CLMemory;
 import ee.ut.physics.digi.tbd.robot.matrix.image.ColoredImage;
-import ee.ut.physics.digi.tbd.robot.matrix.image.GrayscaleImage;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.IntBuffer;
 
 @Slf4j
-public class BallDetectorKernel extends Kernel {
+public class ColorspaceConverterKernel extends Kernel {
 
     private final int absoluteSize;
     private final int localWorkgroupSize;
@@ -20,25 +19,25 @@ public class BallDetectorKernel extends Kernel {
     private final CLBuffer<IntBuffer> inputBuffer;
     private final CLBuffer<IntBuffer> outputBuffer;
 
-    public BallDetectorKernel(int width, int height) throws IOException {
-        super("ballCertaintyMap.cl", "ballCertaintyKernel");
+    public ColorspaceConverterKernel(int width, int height, String kernelFileName, String kernelName) throws IOException {
+        super(kernelFileName, kernelName);
         absoluteSize = width * height;
         localWorkgroupSize = Math.min(device.getMaxWorkGroupSize(), absoluteSize);
         globalWorkgroupSize = calculateGlobalWorkgroupSize(absoluteSize, localWorkgroupSize);
-        inputBuffer = context.createBuffer(Buffers.newDirectIntBuffer(absoluteSize), CLMemory.Mem.READ_ONLY);
-        outputBuffer = context.createBuffer(Buffers.newDirectIntBuffer(absoluteSize), CLMemory.Mem.READ_WRITE);
+        inputBuffer = context.createBuffer(Buffers.newDirectIntBuffer(globalWorkgroupSize), CLMemory.Mem.READ_ONLY);
+        outputBuffer = context.createBuffer(Buffers.newDirectIntBuffer(globalWorkgroupSize), CLMemory.Mem.READ_WRITE);
     }
 
-    public GrayscaleImage generateCertaintyMap(ColoredImage hsvImage) {
-        inputBuffer.getBuffer().put(hsvImage.getData()).rewind();
-        kernel.putArgs(inputBuffer, outputBuffer).putArg(hsvImage.getElementCount()).rewind();
+    public ColoredImage convert(ColoredImage inputImage) {
+        inputBuffer.getBuffer().put(inputImage.getData()).rewind();
+        kernel.putArgs(inputBuffer, outputBuffer).putArg(inputImage.getElementCount()).rewind();
         commandQueue.putWriteBuffer(inputBuffer, false)
                     .put1DRangeKernel(kernel, 0, globalWorkgroupSize, localWorkgroupSize)
                     .putReadBuffer(outputBuffer, true);
-        GrayscaleImage certaintyMap = new GrayscaleImage(hsvImage.getWidth(), hsvImage.getHeight());
-        outputBuffer.getBuffer().get(certaintyMap.getData());
+        ColoredImage outputImage = new ColoredImage(inputImage.getWidth(), inputImage.getHeight());
+        outputBuffer.getBuffer().get(outputImage.getData());
         outputBuffer.getBuffer().rewind();
-        return certaintyMap;
+        return outputImage;
     }
 
 }

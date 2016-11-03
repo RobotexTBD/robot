@@ -2,7 +2,7 @@ package ee.ut.physics.digi.tbd.robot.mainboard;
 
 import ee.ut.physics.digi.tbd.robot.Settings;
 
-public class MainboardFactory {
+public final class MainboardFactory {
 
     private static MainboardFactory instance;
     private final Settings settings;

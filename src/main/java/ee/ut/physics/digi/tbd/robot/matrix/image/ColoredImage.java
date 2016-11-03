@@ -7,6 +7,7 @@ import lombok.Getter;
 @Getter
 public class ColoredImage implements Image {
 
+    public static final int ALPHA_OPAQUE = 0xFF000000;
     private final int[] data;
     private final int width;
     private final int height;
@@ -24,7 +25,7 @@ public class ColoredImage implements Image {
         int index = 0;
         for(int y = 0; y < height; y++) {
             for(int x = 0; x < width; x++, index++) {
-                pixelWriter.setArgb(x, y, 0xFF000000 | data[index]);
+                pixelWriter.setArgb(x, y, ALPHA_OPAQUE | data[index]);
             }
         }
         return image;

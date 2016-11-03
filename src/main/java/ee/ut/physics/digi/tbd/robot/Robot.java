@@ -30,16 +30,16 @@ import java.util.stream.Collectors;
 @Slf4j
 public class Robot implements Runnable {
 
-    private static final boolean DEBUG = false;
-
     private DebugWindow debugWindow;
     private final Mainboard mainboard;
     private final CameraReader cameraReader;
     private final BallDetector ballDetector;
     private final ImageProcessorService imageProcessorService;
     private final Referee referee;
+    private final Settings settings;
 
     public Robot(String cameraName, int width, int height) throws IOException {
+        settings = Settings.getInstance();
         if(isDebug()) {
             debugWindow = DebugWindow.getInstance();
         }
@@ -63,7 +63,7 @@ public class Robot implements Runnable {
     }
 
     public boolean isDebug() {
-        return DEBUG;
+        return settings.shouldShowDebugWindow();
     }
 
     @SuppressWarnings("InfiniteLoopStatement")
@@ -104,7 +104,9 @@ public class Robot implements Runnable {
             GrayscaleImage certaintyMap = imageProcessorService.generateBallCertaintyMap(hsvImage);
             debugWindow.setImage(ImagePanel.MUTATED1, certaintyMap, "Certainty map");
             BinaryImage maxCertainty = imageProcessorService.threshold(certaintyMap, 205, 255);
-            debugWindow.setImage(ImagePanel.MUTATED2, maxCertainty, "Max certainty");
+            debugWindow.setImage(ImagePanel.MUTATED3, maxCertainty, "Max certainty");
+            debugWindow.setImage(ImagePanel.MUTATED4, imageProcessorService.convertHsvToRgb(hsvImage),
+                                 "RGB -> HSV -> RGB");
         }
         Collection<Blob> blobs = ballDetector.findBalls(hsvImage);
         for(Blob blob : blobs) {

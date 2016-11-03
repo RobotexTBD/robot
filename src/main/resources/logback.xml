@@ -7,7 +7,7 @@
         </encoder>
     </appender>
 
-    <logger name="ee.ut.physics.digi.tbd" level="DEBUG" />
+    <logger name="ee.ut.physics.digi.tbd" level="TRACE" />
 
     <root level="WARN">
         <appender-ref ref="STDOUT" />

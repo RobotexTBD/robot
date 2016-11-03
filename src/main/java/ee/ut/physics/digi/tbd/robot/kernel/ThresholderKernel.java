@@ -21,7 +21,7 @@ public class ThresholderKernel extends Kernel {
     private final CLBuffer<IntBuffer> outputBuffer;
 
     public ThresholderKernel(int width, int height) throws IOException {
-        super("kernel/threshold.cl", "thresholdKernel");
+        super("threshold.cl", "thresholdKernel");
         absoluteSize = width * height;
         localWorkgroupSize = Math.min(device.getMaxWorkGroupSize(), absoluteSize);
         globalWorkgroupSize = calculateGlobalWorkgroupSize(absoluteSize, localWorkgroupSize);
