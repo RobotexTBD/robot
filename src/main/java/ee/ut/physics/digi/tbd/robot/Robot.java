@@ -1,7 +1,5 @@
 package ee.ut.physics.digi.tbd.robot;
 
-import com.fazecast.jSerialComm.SerialPort;
-import com.github.sarxos.webcam.Webcam;
 import ee.ut.physics.digi.tbd.robot.debug.DebugWindow;
 import ee.ut.physics.digi.tbd.robot.debug.ImagePanel;
 import ee.ut.physics.digi.tbd.robot.kernel.ImageProcessorService;
@@ -23,10 +21,8 @@ import javafx.application.Platform;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 @Slf4j
 public class Robot implements Runnable {
@@ -44,8 +40,6 @@ public class Robot implements Runnable {
         if(isDebug()) {
             debugWindow = DebugWindow.getInstance();
         }
-        logAvailableSerialPorts();
-        logAvailableWebCams();
         mainboard = MainboardFactory.getInstance().getMainboard();
         cameraReader = new CameraReader(CameraUtil.openCamera(cameraName, width, height));
         imageProcessorService = new ImageProcessorService(width, height);
@@ -53,19 +47,6 @@ public class Robot implements Runnable {
         referee = RefereeFactory.getInstance().getReferee();
     }
 
-    private void logAvailableSerialPorts() {
-        log.debug("Found " + SerialPort.getCommPorts().length + " serial ports: " +
-                  Arrays.stream(SerialPort.getCommPorts())
-                        .map(SerialPort::getDescriptivePortName)
-                        .collect(Collectors.joining(", ")));
-    }
-
-    private void logAvailableWebCams() {
-        log.debug("Found " + Webcam.getWebcams().size() + " webcams: " +
-                  Webcam.getWebcams().stream()
-                        .map(Webcam::getName)
-                        .collect(Collectors.joining(", ")));
-    }
 
     public static void main(String[] args) throws IOException {
         new Robot(Settings.getInstance().getWebcamName(), 640, 480).run();
