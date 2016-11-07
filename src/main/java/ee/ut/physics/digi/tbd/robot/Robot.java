@@ -1,7 +1,7 @@
 package ee.ut.physics.digi.tbd.robot;
 
-import boofcv.io.webcamcapture.UtilWebcamCapture;
 import com.fazecast.jSerialComm.SerialPort;
+import com.github.sarxos.webcam.Webcam;
 import ee.ut.physics.digi.tbd.robot.debug.DebugWindow;
 import ee.ut.physics.digi.tbd.robot.debug.ImagePanel;
 import ee.ut.physics.digi.tbd.robot.kernel.ImageProcessorService;
@@ -18,6 +18,7 @@ import ee.ut.physics.digi.tbd.robot.referee.Referee;
 import ee.ut.physics.digi.tbd.robot.referee.RefereeFactory;
 import ee.ut.physics.digi.tbd.robot.referee.RefereeListener;
 import ee.ut.physics.digi.tbd.robot.util.CameraReader;
+import ee.ut.physics.digi.tbd.robot.util.CameraUtil;
 import javafx.application.Platform;
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,8 +45,9 @@ public class Robot implements Runnable {
             debugWindow = DebugWindow.getInstance();
         }
         logAvailableSerialPorts();
+        logAvailableWebCams();
         mainboard = MainboardFactory.getInstance().getMainboard();
-        cameraReader = new CameraReader(UtilWebcamCapture.openDevice(cameraName, width, height));
+        cameraReader = new CameraReader(CameraUtil.openCamera(cameraName, width, height));
         imageProcessorService = new ImageProcessorService(width, height);
         ballDetector = new BallDetector(imageProcessorService);
         referee = RefereeFactory.getInstance().getReferee();
@@ -55,6 +57,13 @@ public class Robot implements Runnable {
         log.debug("Found " + SerialPort.getCommPorts().length + " serial ports: " +
                   Arrays.stream(SerialPort.getCommPorts())
                         .map(SerialPort::getDescriptivePortName)
+                        .collect(Collectors.joining(", ")));
+    }
+
+    private void logAvailableWebCams() {
+        log.debug("Found " + Webcam.getWebcams().size() + " webcams: " +
+                  Webcam.getWebcams().stream()
+                        .map(Webcam::getName)
                         .collect(Collectors.joining(", ")));
     }
 
