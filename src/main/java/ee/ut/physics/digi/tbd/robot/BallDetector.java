@@ -1,9 +1,9 @@
 package ee.ut.physics.digi.tbd.robot;
 
-import ee.ut.physics.digi.tbd.robot.kernel.ImageProcessorService;
+import ee.ut.physics.digi.tbd.robot.image.ColoredImage;
+import ee.ut.physics.digi.tbd.robot.image.GrayscaleImage;
+import ee.ut.physics.digi.tbd.robot.image.processing.ImageProcessorService;
 import ee.ut.physics.digi.tbd.robot.matrix.VisitedMap;
-import ee.ut.physics.digi.tbd.robot.matrix.image.ColoredImage;
-import ee.ut.physics.digi.tbd.robot.matrix.image.GrayscaleImage;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayDeque;

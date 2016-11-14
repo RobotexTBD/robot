@@ -1,7 +1,7 @@
 package ee.ut.physics.digi.tbd.robot.util;
 
 import com.github.sarxos.webcam.Webcam;
-import ee.ut.physics.digi.tbd.robot.matrix.image.ColoredImage;
+import ee.ut.physics.digi.tbd.robot.image.ColoredImage;
 import lombok.Getter;
 
 import java.nio.ByteBuffer;

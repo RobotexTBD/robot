@@ -1,22 +1,21 @@
-package ee.ut.physics.digi.tbd.robot.matrix.image;
+package ee.ut.physics.digi.tbd.robot.image;
 
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import lombok.Getter;
 
 @Getter
-public class BinaryImage implements Image {
+public class GrayscaleImage implements Image {
 
-    public static final int ARGB_WHITE = 0xFFFFFFFF;
-    public static final int ARGB_BLACK = 0xFF000000;
+    public static final int ALPHA_OPAQUE = 0xFF000000;
     private final int width;
     private final int height;
-    private final boolean[] data;
+    private final int[] data;
 
-    public BinaryImage(int width, int height) {
+    public GrayscaleImage(int width, int height) {
         this.width = width;
         this.height = height;
-        this.data = new boolean[width * height];
+        data = new int[width * height];
     }
 
     @Override
@@ -26,7 +25,7 @@ public class BinaryImage implements Image {
         int index = 0;
         for(int y = 0; y < height; y++) {
             for(int x = 0; x < width; x++, index++) {
-                pixelWriter.setArgb(x, y, data[index] ? ARGB_WHITE : ARGB_BLACK);
+                pixelWriter.setArgb(x, y, ALPHA_OPAQUE | data[index] << 16 | data[index] << 8 | data[index]);
             }
         }
         return image;

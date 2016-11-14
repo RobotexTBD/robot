@@ -1,4 +1,4 @@
-package ee.ut.physics.digi.tbd.robot.matrix.image;
+package ee.ut.physics.digi.tbd.robot.image;
 
 import ee.ut.physics.digi.tbd.robot.matrix.Matrix;
 import javafx.scene.image.WritableImage;

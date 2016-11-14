@@ -1,6 +1,6 @@
 package ee.ut.physics.digi.tbd.robot.debug;
 
-import ee.ut.physics.digi.tbd.robot.matrix.image.Image;
+import ee.ut.physics.digi.tbd.robot.image.Image;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;

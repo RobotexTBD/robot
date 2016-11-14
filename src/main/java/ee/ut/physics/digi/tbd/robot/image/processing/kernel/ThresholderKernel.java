@@ -1,17 +1,17 @@
-package ee.ut.physics.digi.tbd.robot.kernel;
+package ee.ut.physics.digi.tbd.robot.image.processing.kernel;
 
 import com.jogamp.common.nio.Buffers;
 import com.jogamp.opencl.CLBuffer;
 import com.jogamp.opencl.CLMemory;
-import ee.ut.physics.digi.tbd.robot.matrix.image.ColoredImage;
-import ee.ut.physics.digi.tbd.robot.matrix.image.GrayscaleImage;
+import ee.ut.physics.digi.tbd.robot.image.BinaryImage;
+import ee.ut.physics.digi.tbd.robot.image.GrayscaleImage;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.IntBuffer;
 
 @Slf4j
-public class BallDetectorKernel extends Kernel {
+public class ThresholderKernel extends Kernel {
 
     private final int absoluteSize;
     private final int localWorkgroupSize;
@@ -20,8 +20,8 @@ public class BallDetectorKernel extends Kernel {
     private final CLBuffer<IntBuffer> inputBuffer;
     private final CLBuffer<IntBuffer> outputBuffer;
 
-    public BallDetectorKernel(int width, int height) throws IOException {
-        super("ballCertaintyMap.cl", "ballCertaintyKernel");
+    public ThresholderKernel(int width, int height) throws IOException {
+        super("threshold.cl", "thresholdKernel");
         absoluteSize = width * height;
         localWorkgroupSize = Math.min(device.getMaxWorkGroupSize(), absoluteSize);
         globalWorkgroupSize = calculateGlobalWorkgroupSize(absoluteSize, localWorkgroupSize);
@@ -29,16 +29,27 @@ public class BallDetectorKernel extends Kernel {
         outputBuffer = context.createBuffer(Buffers.newDirectIntBuffer(absoluteSize), CLMemory.Mem.READ_WRITE);
     }
 
-    public GrayscaleImage generateCertaintyMap(ColoredImage hsvImage) {
-        inputBuffer.getBuffer().put(hsvImage.getData()).rewind();
-        kernel.putArgs(inputBuffer, outputBuffer).putArg(hsvImage.getElementCount()).rewind();
+    public BinaryImage threshold(GrayscaleImage image, float min, float max, int maxValue) {
+        return threshold(image, (int) (maxValue * min), (int) (maxValue * max));
+    }
+
+    public BinaryImage threshold(GrayscaleImage image, int min, int max) {
+        inputBuffer.getBuffer().put(image.getData()).rewind();
+        kernel.putArgs(inputBuffer, outputBuffer)
+              .putArg(min)
+              .putArg(max)
+              .putArg(image.getElementCount()).rewind();
         commandQueue.putWriteBuffer(inputBuffer, false)
                     .put1DRangeKernel(kernel, 0, globalWorkgroupSize, localWorkgroupSize)
                     .putReadBuffer(outputBuffer, true);
-        GrayscaleImage certaintyMap = new GrayscaleImage(hsvImage.getWidth(), hsvImage.getHeight());
-        outputBuffer.getBuffer().get(certaintyMap.getData());
+        BinaryImage thresholded = new BinaryImage(image.getWidth(), image.getHeight());
+        for(int i = 0; i < absoluteSize; i++) {
+            thresholded.getData()[i] = outputBuffer.getBuffer().get() > 0;
+        }
         outputBuffer.getBuffer().rewind();
-        return certaintyMap;
+        return thresholded;
     }
+
+
 
 }

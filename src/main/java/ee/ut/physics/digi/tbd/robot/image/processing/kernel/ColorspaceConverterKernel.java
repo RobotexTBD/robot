@@ -1,16 +1,16 @@
-package ee.ut.physics.digi.tbd.robot.kernel;
+package ee.ut.physics.digi.tbd.robot.image.processing.kernel;
 
 import com.jogamp.common.nio.Buffers;
 import com.jogamp.opencl.CLBuffer;
 import com.jogamp.opencl.CLMemory;
-import ee.ut.physics.digi.tbd.robot.matrix.image.ColoredImage;
+import ee.ut.physics.digi.tbd.robot.image.ColoredImage;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.IntBuffer;
 
 @Slf4j
-public class ColorspaceConverterKernel extends Kernel {
+public abstract class ColorspaceConverterKernel extends Kernel {
 
     private final int absoluteSize;
     private final int localWorkgroupSize;

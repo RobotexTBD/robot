@@ -1,4 +1,4 @@
-package ee.ut.physics.digi.tbd.robot.kernel;
+package ee.ut.physics.digi.tbd.robot.image.processing.kernel;
 
 import lombok.extern.slf4j.Slf4j;
 
