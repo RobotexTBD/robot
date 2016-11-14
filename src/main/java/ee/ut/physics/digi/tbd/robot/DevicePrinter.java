@@ -21,7 +21,7 @@ public class DevicePrinter {
     private void logAvailableSerialPorts() {
         log.info("Found " + SerialPort.getCommPorts().length + " serial ports: ");
         Arrays.stream(SerialPort.getCommPorts())
-              .map(SerialPort::getDescriptivePortName)
+              .map(p -> p.getDescriptivePortName() + "(" + p.getSystemPortName() + ")")
               .forEach(portName -> log.info("\t" + portName));
     }
 

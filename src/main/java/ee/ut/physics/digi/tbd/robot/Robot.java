@@ -111,9 +111,9 @@ public class Robot implements Runnable {
     private void turnRight() {
         log.trace("TURN RIGHT!");
         float speed = 0.5f;
-        mainboard.sendCommandsBatch(new MotorSpeedCommand(Motor.LEFT, speed, Direction.BACK),
-                                    new MotorSpeedCommand(Motor.RIGHT, speed, Direction.FORWARD),
-                                    new MotorSpeedCommand(Motor.BACK, speed, Direction.RIGHT));
+        mainboard.sendCommandsBatch(new MotorSpeedCommand(Motor.LEFT, speed, Direction.FORWARD),
+                                    new MotorSpeedCommand(Motor.RIGHT, speed, Direction.BACK),
+                                    new MotorSpeedCommand(Motor.BACK, speed, Direction.LEFT));
     }
 
     private void moveForward() {
