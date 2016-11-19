@@ -11,4 +11,14 @@ public class MainboardMock implements Mainboard {
         log.info(command.toString());
     }
 
+    @Override
+    public boolean getDribblerFilled() {
+        return false;
+    }
+
+    @Override
+    public boolean getCoilgunCharged() {
+        return false;
+    }
+
 }

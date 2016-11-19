@@ -1,5 +1,5 @@
 int constant mask = 0x000000FF;
-int constant YELLOW_HUE = 25;
+int constant YELLOW_HUE = 28;
 
 int imax(int a, int b) {
     return a > b ? a : b;

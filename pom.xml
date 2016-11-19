@@ -38,7 +38,7 @@
                             <goal>java</goal>
                         </goals>
                         <configuration>
-                            <mainClass>ee.ut.physics.digi.tbd.robot.DevicePrinter</mainClass>
+                            <mainClass>ee.ut.physics.digi.tbd.robot.debug.DevicePrinter</mainClass>
                         </configuration>
                     </execution>
                 </executions>

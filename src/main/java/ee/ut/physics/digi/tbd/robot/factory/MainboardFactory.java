@@ -1,6 +1,9 @@
-package ee.ut.physics.digi.tbd.robot.mainboard;
+package ee.ut.physics.digi.tbd.robot.factory;
 
 import ee.ut.physics.digi.tbd.robot.Settings;
+import ee.ut.physics.digi.tbd.robot.mainboard.Mainboard;
+import ee.ut.physics.digi.tbd.robot.mainboard.MainboardImpl;
+import ee.ut.physics.digi.tbd.robot.mainboard.MainboardMock;
 
 public final class MainboardFactory {
 

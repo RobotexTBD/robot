@@ -8,6 +8,10 @@ public interface Mainboard {
 
     void sendCommand(MainboardCommand command);
 
+    boolean getDribblerFilled();
+
+    boolean getCoilgunCharged();
+
     default void sendCommandsBatch(MainboardCommand... commands) {
         Arrays.stream(commands).forEach(this::sendCommand);
     }

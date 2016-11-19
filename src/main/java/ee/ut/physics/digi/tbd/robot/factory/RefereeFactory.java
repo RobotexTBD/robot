@@ -1,6 +1,9 @@
-package ee.ut.physics.digi.tbd.robot.referee;
+package ee.ut.physics.digi.tbd.robot.factory;
 
 import ee.ut.physics.digi.tbd.robot.Settings;
+import ee.ut.physics.digi.tbd.robot.referee.Referee;
+import ee.ut.physics.digi.tbd.robot.referee.RefereeImpl;
+import ee.ut.physics.digi.tbd.robot.referee.RefereeMock;
 
 public final class RefereeFactory {
 

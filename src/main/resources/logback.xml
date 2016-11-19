@@ -8,6 +8,7 @@
     </appender>
 
     <logger name="ee.ut.physics.digi.tbd" level="INFO" />
+    <logger name="ee.ut.physics.digi.tbd.robot.mainboard" level="TRACE" />
 
     <root level="WARN">
         <appender-ref ref="STDOUT" />

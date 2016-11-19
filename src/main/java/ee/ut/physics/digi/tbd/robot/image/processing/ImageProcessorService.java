@@ -33,10 +33,6 @@ public class ImageProcessorService {
         }
     }
 
-    public GrayscaleImage generateBallCertaintyMap(ColoredImage hsvImage) {
-        return measureTimeAndReturn("Ball certainty map generation", () -> ballDetector.generateCertaintyMap(hsvImage));
-    }
-
     public ColoredImage convertRgbToHsv(ColoredImage rgbImage) {
         return measureTimeAndReturn("RGB -> HSV", () -> rgbToHsvConverter.convert(rgbImage));
     }
@@ -61,4 +57,20 @@ public class ImageProcessorService {
         return result;
     }
 
+    public GrayscaleImage generateBallCertaintyMap(ColoredImage hsvImage) {
+        return measureTimeAndReturn("Ball certainty map generation",
+                                    () -> ballDetector.generateCertaintyMap(hsvImage));
+    }
+
+
+    public GrayscaleImage generateBlueCertaintyMap(ColoredImage hsvImage) {
+        return measureTimeAndReturn("Blue certainty map generation",
+                                    () -> blueDetector.generateCertaintyMap(hsvImage));
+    }
+
+
+    public GrayscaleImage generateYellowCertaintyMap(ColoredImage hsvImage) {
+        return measureTimeAndReturn("Yellow certainty map generation",
+                                    () -> yellowDetector.generateCertaintyMap(hsvImage));
+    }
 }
