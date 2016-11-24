@@ -18,6 +18,8 @@ import ee.ut.physics.digi.tbd.robot.logic.state.GameObjectType;
 import ee.ut.physics.digi.tbd.robot.logic.state.MainboardState;
 import ee.ut.physics.digi.tbd.robot.logic.state.RobotState;
 import ee.ut.physics.digi.tbd.robot.mainboard.Mainboard;
+import ee.ut.physics.digi.tbd.robot.mainboard.Motor;
+import ee.ut.physics.digi.tbd.robot.mainboard.command.MotorStopCommand;
 import ee.ut.physics.digi.tbd.robot.referee.Referee;
 import ee.ut.physics.digi.tbd.robot.referee.RefereeListener;
 import ee.ut.physics.digi.tbd.robot.util.CameraReader;
@@ -29,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -48,7 +51,7 @@ public class Robot implements Runnable {
     private final Mainboard mainboard;
     private final Referee referee;
     private final Settings settings;
-    private final RobotBehaviour behaviour;
+    private RobotBehaviour behaviour;
 
     public Robot(Webcam camera) throws IOException {
         settings = Settings.getInstance();
@@ -61,8 +64,6 @@ public class Robot implements Runnable {
         goalDetector = new GoalDetector();
         mainboard = MainboardFactory.getInstance().getMainboard();
         referee = RefereeFactory.getInstance().getReferee();
-        behaviour = RobotBehaviourFactory.getInstance().getBehaviour();
-        behaviour.setMainboard(mainboard);
     }
 
 
@@ -84,6 +85,8 @@ public class Robot implements Runnable {
             @Override
             public void onStart() {
                 log.info("Game started");
+                behaviour = RobotBehaviourFactory.getInstance().getBehaviour();
+                behaviour.setMainboard(mainboard);
                 running.set(true);
             }
 
@@ -95,6 +98,9 @@ public class Robot implements Runnable {
         });
         while(true) {
             if(!running.get()) {
+                mainboard.sendCommandsBatch(new MotorStopCommand(Motor.RIGHT),
+                                            new MotorStopCommand(Motor.LEFT),
+                                            new MotorStopCommand(Motor.BACK));
                 continue;
             }
             ColoredImage rgbImage = cameraReader.readRgbImage();
@@ -109,7 +115,8 @@ public class Robot implements Runnable {
 
     @SneakyThrows
     public void loop(ColoredImage rgbImage) {
-        ColoredImage hsvImage = imageProcessorService.convertRgbToHsv(rgbImage);
+        ColoredImage balancedRgbImage = imageProcessorService.whiteBalance(rgbImage);
+        ColoredImage hsvImage = imageProcessorService.convertRgbToHsv(balancedRgbImage);
         GrayscaleImage ballMap = imageProcessorService.generateBallCertaintyMap(hsvImage);
         GrayscaleImage blueMap = imageProcessorService.generateBlueCertaintyMap(hsvImage);
         GrayscaleImage yellowMap = imageProcessorService.generateYellowCertaintyMap(hsvImage);
@@ -119,6 +126,16 @@ public class Robot implements Runnable {
         balls.stream()
              .map((blob) -> new GameObject(blob, 0, 0, GameObjectType.BALL))
              .collect(Collectors.toCollection(() -> visibleObjects));
+
+        GameObject goal = null;
+        GrayscaleImage goalMap = settings.getTargetGoal().equalsIgnoreCase("yellow") ? yellowMap : blueMap;
+        goal = Optional.ofNullable(goalDetector.findGoal(goalMap))
+                       .map(blob -> new GameObject(blob, 0, 0, GameObjectType.TARGET_GOAL))
+                       .orElse(null);
+        if(goal != null) {
+            visibleObjects.add(goal);
+        }
+
         MainboardState mainboardState = new MainboardState(mainboard.getDribblerFilled(),
                                                            mainboard.getCoilgunCharged());
 
@@ -126,6 +143,9 @@ public class Robot implements Runnable {
         if(isDebug()) {
             debugWindow.setImage(ImagePanel.ORIGINAL, rgbImage, "Original");
             debugWindow.setImage(ImagePanel.MUTATED1, ballMap, "Ball map");
+
+            debugWindow.setImage(ImagePanel.MUTATED2, balancedRgbImage, "Balanced");
+
             debugWindow.setImage(ImagePanel.MUTATED3, blueMap, "Blue map");
             debugWindow.setImage(ImagePanel.MUTATED4, yellowMap, "Yellow map");
             debugWindow.setImage(ImagePanel.MUTATED5, imageProcessorService.convertHsvToRgb(hsvImage),

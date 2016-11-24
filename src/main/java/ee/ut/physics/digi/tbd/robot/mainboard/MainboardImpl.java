@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class MainboardImpl implements Mainboard {
 
-    private static final int MAX_SPEED = 255/ 10;
+    private static final int MAX_SPEED = 255;
     private final SerialPort serialPort;
     private final Thread readerThread;
     private final Thread coilgunChargerThread;

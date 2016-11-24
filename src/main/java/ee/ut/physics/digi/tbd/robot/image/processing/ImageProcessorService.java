@@ -19,6 +19,7 @@ public class ImageProcessorService {
     private final RgbToHsvConverterKernel rgbToHsvConverter;
     private final HsvToRgbConverterKernel hsvToRgbConverter;
     private final ThresholderKernel thresholder;
+    private final WhiteBalanceKernel whitebalance;
 
     public ImageProcessorService(int width, int height) {
         try {
@@ -28,6 +29,7 @@ public class ImageProcessorService {
             rgbToHsvConverter = new RgbToHsvConverterKernel(width, height);
             hsvToRgbConverter = new HsvToRgbConverterKernel(width, height);
             thresholder = new ThresholderKernel(width, height);
+            whitebalance = new WhiteBalanceKernel(width, height);
         } catch(IOException e) {
             throw new IllegalStateException("Unable to initialize image processor service", e);
         }
@@ -73,4 +75,10 @@ public class ImageProcessorService {
         return measureTimeAndReturn("Yellow certainty map generation",
                                     () -> yellowDetector.generateCertaintyMap(hsvImage));
     }
+
+    public ColoredImage whiteBalance(ColoredImage rgbImage) {
+        return measureTimeAndReturn("White balance",
+                                    () -> whitebalance.balance(rgbImage));
+    }
+
 }

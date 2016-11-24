@@ -68,7 +68,7 @@ public class BallDetector implements BlobDetector {
                 }
             }
         }
-        if(blobBuilder.getSize() > 64) {
+        if(blobBuilder.getSize() > 5) {
             return blobBuilder.toBlob();
         }
         return null;

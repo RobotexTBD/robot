@@ -72,15 +72,11 @@ public class MainRobotBehaviour extends RobotBehaviour implements Runnable {
                 case AIMING:
                     state = getNewState();
                     GameObject goal = state.getVisibleObjects().stream()
-                                           .filter(obj -> obj.getType() == GameObjectType.YELLOW_GOAL)
-                                           .max((a, b) -> Integer.compare(a.getBlob().getSize(),
-                                                                          b.getBlob().getSize()))
-                                           .orElse(null);
+                                           .filter(obj -> obj.getType() == GameObjectType.TARGET_GOAL)
+                                           .findAny().orElse(null);
                     if(goal == null) {
-                        kick();
                         turnRight();
-                    } else if(goal.getBlob().getCenterX() + goal.getBlob().getMinX() < 640 &&
-                              goal.getBlob().getCenterX() + goal.getBlob().getMaxX() > 640) {
+                    } else if(Math.abs(320 - goal.getBlob().getCenterX()) < 40 + goal.getBlob().getMaxY() / 6) {
                         kick();
                         Thread.sleep(20);
                         stopDribbler();
@@ -117,21 +113,21 @@ public class MainRobotBehaviour extends RobotBehaviour implements Runnable {
     }
 
     private void moveForward() {
-        mainboard.sendCommandsBatch(new MotorSpeedCommand(Motor.LEFT, 0.7f, Direction.FORWARD),
-                                    new MotorSpeedCommand(Motor.RIGHT, 0.7f, Direction.FORWARD),
+        mainboard.sendCommandsBatch(new MotorSpeedCommand(Motor.LEFT, 1.0f, Direction.FORWARD),
+                                    new MotorSpeedCommand(Motor.RIGHT, 1.0f, Direction.FORWARD),
                                     new MotorStopCommand(Motor.BACK));
     }
 
     private void turnLeft() {
-        mainboard.sendCommandsBatch(new MotorStopCommand(Motor.LEFT),
-                                    new MotorStopCommand(Motor.RIGHT),
-                                    new MotorSpeedCommand(Motor.BACK, 0.7f, Direction.RIGHT));
+        mainboard.sendCommandsBatch(new MotorSpeedCommand(Motor.LEFT, 0.5f, Direction.BACK),
+                                    new MotorSpeedCommand(Motor.RIGHT, 0.5f, Direction.FORWARD),
+                                    new MotorSpeedCommand(Motor.BACK, 1.0f, Direction.RIGHT));
     }
 
     private void turnRight() {
-        mainboard.sendCommandsBatch(new MotorStopCommand(Motor.LEFT),
-                                    new MotorStopCommand(Motor.RIGHT),
-                                    new MotorSpeedCommand(Motor.BACK, 0.7f, Direction.LEFT));
+        mainboard.sendCommandsBatch(new MotorSpeedCommand(Motor.LEFT, 0.5f, Direction.FORWARD),
+                                    new MotorSpeedCommand(Motor.RIGHT, 0.5f, Direction.BACK),
+                                    new MotorSpeedCommand(Motor.BACK, 1.0f, Direction.LEFT));
     }
 
     private int distance(Blob blob) {

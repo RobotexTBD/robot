@@ -4,22 +4,26 @@ import ee.ut.physics.digi.tbd.robot.image.GrayscaleImage;
 import ee.ut.physics.digi.tbd.robot.image.blob.Blob;
 import ee.ut.physics.digi.tbd.robot.image.blob.BlobBuilder;
 import ee.ut.physics.digi.tbd.robot.matrix.VisitedMap;
+import ee.ut.physics.digi.tbd.robot.util.BlobUtil;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Queue;
+import java.util.*;
 
 @Slf4j
 public class GoalDetector implements BlobDetector {
 
+
+    @Override
     public Collection<Blob> findBlobs(GrayscaleImage certaintyMap) {
+        return Collections.singletonList(findGoal(certaintyMap));
+    }
+
+    public Blob findGoal(GrayscaleImage certaintyMap) {
         long time = System.currentTimeMillis();
         VisitedMap visitedMap = new VisitedMap(certaintyMap.getWidth(), certaintyMap.getHeight());
         Collection<Blob> maxCertaintyBlobs = getMaxCertaintyBlobs(certaintyMap, visitedMap);
         log.debug("Finding goals took " + (System.currentTimeMillis() - time) + " milliseconds");
-        return maxCertaintyBlobs;
+        return BlobUtil.join(maxCertaintyBlobs);
     }
 
     private Collection<Blob> getMaxCertaintyBlobs(GrayscaleImage certaintyMap, VisitedMap visitedMap) {
@@ -31,7 +35,7 @@ public class GoalDetector implements BlobDetector {
                 if(!(certaintyMap.getData()[maxCertaintyPos] >= 205) || visitedMap.getVisited()[visitedMapPos]) {
                     continue;
                 }
-                Blob ball = findBall(visitedMapPos, visitedMap, certaintyMap);
+                Blob ball = findGoalPart(visitedMapPos, visitedMap, certaintyMap);
                 if(ball != null) {
                     balls.add(ball);
                 }
@@ -42,7 +46,7 @@ public class GoalDetector implements BlobDetector {
         return balls;
     }
 
-    private Blob findBall(int visitedMapStartPos, VisitedMap visitedMap, GrayscaleImage certaintyMap) {
+    private Blob findGoalPart(int visitedMapStartPos, VisitedMap visitedMap, GrayscaleImage certaintyMap) {
         Queue<Integer> visitQueue = new ArrayDeque<>();
         visitQueue.add(visitedMapStartPos);
         BlobBuilder blobBuilder = new BlobBuilder();
@@ -68,11 +72,10 @@ public class GoalDetector implements BlobDetector {
                 }
             }
         }
-        if(blobBuilder.getSize() > 64) {
+        if(blobBuilder.getSize() > 32) {
             return blobBuilder.toBlob();
         }
         return null;
     }
-
 
 }

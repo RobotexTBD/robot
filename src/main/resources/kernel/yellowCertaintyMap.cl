@@ -1,5 +1,5 @@
 int constant mask = 0x000000FF;
-int constant YELLOW_HUE = 28;
+int constant YELLOW_HUE = 25;
 
 int imax(int a, int b) {
     return a > b ? a : b;
@@ -17,6 +17,18 @@ float limit(float value) {
     return fmax(0.0f, fmin(1.0f, value));
 }
 
+int iabs(int a) {
+    return a > 0 ? a : -a;
+}
+
+int ilimit(int value, int minValue, int maxValue) {
+    return imin(maxValue, imax(minValue, value));
+}
+
+int igapDistance(int value, int minValue, int maxValue) {
+    return iabs(value - ilimit(value, minValue, maxValue));
+}
+
 int getHueDistance(int hue1, int hue2) {
     int minHue = imin(hue1, hue2);
     int maxHue = imax(hue1, hue2);
@@ -24,15 +36,15 @@ int getHueDistance(int hue1, int hue2) {
 }
 
 float getHueCertainty(float hueDistance) {
-    return 1.0f - (isquare(hueDistance) / 180.0f);
+    return 1.0f - (isquare(hueDistance) / 180.0f) * 10.0f;
 }
 
 float getSaturationCertainty(float saturation) {
-    return 1.0f - (isquare(255 - saturation) / 50000.0f);
+    return 1.0f - isquare(igapDistance(saturation, 245, 255)) / 1000.0f;
 }
 
 float getValueCertainty(float value) {
-    return 1.0f - (isquare(255 - value) / 50000.0f);
+    return 1.0f - isquare(igapDistance(value, 180, 200)) / 1000.0f;
 }
 
 int calculateCertainty(int hue, int saturation, int value) {

@@ -22,6 +22,7 @@ public final class Settings {
     private static final String COILGUN_CHARGING_INIT_TIME_KEY = "coilgun.charging.initTime";
     private static final String COILGUN_CHARGING_WAIT_TIME_KEY = "coilgun.charging.waitTime";
     private static final String COILGUN_CHARGING_RECHARGE_TIME_KEY = "coilgun.charging.rechargeTime";
+    private static final String TARGET_GOAL_KEY = "game.targetGoal";
     private static Settings instance;
     private Properties properties;
 
@@ -84,6 +85,10 @@ public final class Settings {
 
     public int getCoilgunChargeRechargeTime() {
         return readIntProperty(COILGUN_CHARGING_INIT_TIME_KEY, "Coilgun keep-alive charge time");
+    }
+
+    public String getTargetGoal() {
+        return readStringProperty(TARGET_GOAL_KEY, "Target goal");
     }
 
     private char readCharProperty(String key, String name) {
