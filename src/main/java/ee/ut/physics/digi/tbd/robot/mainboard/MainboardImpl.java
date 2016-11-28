@@ -35,6 +35,7 @@ public class MainboardImpl implements Mainboard {
         readerThread.start();
         coilgunChargerThread = new Thread(this.new CoilgunCharger(), "Coilgun charger thread");
         coilgunChargerThread.start();
+        System.out.println("MAINBOARD INIT: " + serialPort.getDescriptivePortName());
         sendInitCommands();
     }
 

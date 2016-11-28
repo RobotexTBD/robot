@@ -28,6 +28,7 @@ public class RefereeImpl implements Referee {
         serialPort.setComPortParameters(19200, 8, SerialPort.ONE_STOP_BIT, SerialPort.NO_PARITY);
         serialPort.setComPortTimeouts(SerialPort.TIMEOUT_WRITE_BLOCKING, 0, 100);
         readerThread = new Thread(this.new RefereeReader(), "Referee reader thread");
+        System.out.println("REFEREE INIT: " + serialPort.getDescriptivePortName());
         readerThread.start();
     }
 
