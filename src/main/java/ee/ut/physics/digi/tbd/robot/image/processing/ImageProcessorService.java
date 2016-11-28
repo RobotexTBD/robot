@@ -27,8 +27,8 @@ public class ImageProcessorService {
 
     public ImageProcessorService(int width, int height) {
         try {
-            ballDetector = new BallDetectorKernel(width, height);
-            yellowDetector = new YellowDetectorKernel(width, height);
+            ballDetector = new GenericCertaintyMapKernel(width, height);
+            yellowDetector = new GenericCertaintyMapKernel(width, height);
             blueDetector = new GenericCertaintyMapKernel(width, height);
             rgbToHsvConverter = new RgbToHsvConverterKernel(width, height);
             hsvToRgbConverter = new HsvToRgbConverterKernel(width, height);
