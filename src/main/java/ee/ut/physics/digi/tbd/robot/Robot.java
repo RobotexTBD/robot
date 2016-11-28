@@ -1,8 +1,9 @@
 package ee.ut.physics.digi.tbd.robot;
 
 import com.github.sarxos.webcam.Webcam;
+import ee.ut.physics.digi.tbd.robot.context.RobotContext;
+import ee.ut.physics.digi.tbd.robot.context.RobotContextHolder;
 import ee.ut.physics.digi.tbd.robot.debug.DebugWindow;
-import ee.ut.physics.digi.tbd.robot.debug.ImagePanel;
 import ee.ut.physics.digi.tbd.robot.factory.MainboardFactory;
 import ee.ut.physics.digi.tbd.robot.factory.RefereeFactory;
 import ee.ut.physics.digi.tbd.robot.image.ColoredImage;
@@ -38,28 +39,26 @@ import java.util.stream.Collectors;
 @Slf4j
 public class Robot implements Runnable {
 
-    private static final int WEBCAM_WIDTH = 640;
-    private static final int WEBCAM_HEIGHT = 480;
-
-    private String state = "searching";
-
-    private DebugWindow debugWindow;
+    private final RobotContext context = RobotContextHolder.getContext();
     private final CameraReader cameraReader;
     private final BallDetector ballDetector;
     private final GoalDetector goalDetector;
-    private final ImageProcessorService imageProcessorService;
+    private final ImageProcessorService imageProcessorService = context.getImageProcessorService();
     private final Mainboard mainboard;
     private final Referee referee;
     private final Settings settings;
+
+    private DebugWindow debugWindow;
     private RobotBehaviour behaviour;
 
-    public Robot(Webcam camera) throws IOException {
+    public Robot() throws IOException {
+        Webcam camera = CameraUtil.openCamera(Settings.getInstance().getWebcamName(),
+                                              RobotContext.CAMERA_WIDTH, RobotContext.CAMERA_HEIGHT);
         settings = Settings.getInstance();
         if(isDebug()) {
             debugWindow = DebugWindow.getInstance();
         }
         cameraReader = new CameraReader(camera);
-        imageProcessorService = new ImageProcessorService(camera.getViewSize().width, camera.getViewSize().height);
         ballDetector = new BallDetector();
         goalDetector = new GoalDetector();
         mainboard = MainboardFactory.getInstance().getMainboard();
@@ -68,9 +67,7 @@ public class Robot implements Runnable {
 
 
     public static void main(String[] args) throws IOException {
-        //TODO: refactor to use factory
-        Webcam camera = CameraUtil.openCamera(Settings.getInstance().getWebcamName(), WEBCAM_WIDTH, WEBCAM_HEIGHT);
-        new Robot(camera).run();
+        new Robot().run();
     }
 
     public boolean isDebug() {
@@ -108,7 +105,7 @@ public class Robot implements Runnable {
             loop(rgbImage);
             log.trace("Loop took " + (System.currentTimeMillis() - startTime) + " ms");
             if(isDebug()) {
-                Platform.runLater(debugWindow::render);
+                Platform.runLater(debugWindow::renderImages);
             }
         }
     }
@@ -127,7 +124,7 @@ public class Robot implements Runnable {
              .map((blob) -> new GameObject(blob, 0, 0, GameObjectType.BALL))
              .collect(Collectors.toCollection(() -> visibleObjects));
 
-        GameObject goal = null;
+        GameObject goal;
         GrayscaleImage goalMap = settings.getTargetGoal().equalsIgnoreCase("yellow") ? yellowMap : blueMap;
         goal = Optional.ofNullable(goalDetector.findGoal(goalMap))
                        .map(blob -> new GameObject(blob, 0, 0, GameObjectType.TARGET_GOAL))
@@ -141,15 +138,12 @@ public class Robot implements Runnable {
 
         behaviour.stateUpdate(new RobotState(visibleObjects, mainboardState));
         if(isDebug()) {
-            debugWindow.setImage(ImagePanel.ORIGINAL, rgbImage, "Original");
-            debugWindow.setImage(ImagePanel.MUTATED1, ballMap, "Ball map");
-
-            debugWindow.setImage(ImagePanel.MUTATED2, balancedRgbImage, "Balanced");
-
-            debugWindow.setImage(ImagePanel.MUTATED3, blueMap, "Blue map");
-            debugWindow.setImage(ImagePanel.MUTATED4, yellowMap, "Yellow map");
-            debugWindow.setImage(ImagePanel.MUTATED5, imageProcessorService.convertHsvToRgb(hsvImage),
-                                 "RGB -> HSV -> RGB");
+            debugWindow.setImage(rgbImage, "Original");
+            debugWindow.setImage(ballMap, "Ball map");
+            debugWindow.setImage(balancedRgbImage, "Balanced");
+            debugWindow.setImage(blueMap, "Blue map");
+            debugWindow.setImage(yellowMap, "Yellow map");
+            debugWindow.setImage(imageProcessorService.convertHsvToRgb(hsvImage), "RGB -> HSV -> RGB");
         }
     }
 

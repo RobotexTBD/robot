@@ -49,9 +49,15 @@
     <dependencies>
 
         <dependency>
-            <groupId>org.boofcv</groupId>
-            <artifactId>all</artifactId>
-            <version>0.24.1</version>
+            <groupId>com.github.sarxos</groupId>
+            <artifactId>webcam-capture</artifactId>
+            <version>0.3.10</version>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-beanutils</groupId>
+            <artifactId>commons-beanutils</artifactId>
+            <version>1.9.3</version>
         </dependency>
 
         <dependency>

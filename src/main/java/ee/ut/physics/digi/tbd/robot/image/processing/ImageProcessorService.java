@@ -8,7 +8,11 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class ImageProcessorService {
@@ -19,17 +23,17 @@ public class ImageProcessorService {
     private final RgbToHsvConverterKernel rgbToHsvConverter;
     private final HsvToRgbConverterKernel hsvToRgbConverter;
     private final ThresholderKernel thresholder;
-    private final WhiteBalanceKernel whitebalance;
+    private final WhiteBalanceKernel whiteBalance;
 
     public ImageProcessorService(int width, int height) {
         try {
             ballDetector = new BallDetectorKernel(width, height);
             yellowDetector = new YellowDetectorKernel(width, height);
-            blueDetector = new BlueDetectorKernel(width, height);
+            blueDetector = new GenericCertaintyMapKernel(width, height);
             rgbToHsvConverter = new RgbToHsvConverterKernel(width, height);
             hsvToRgbConverter = new HsvToRgbConverterKernel(width, height);
             thresholder = new ThresholderKernel(width, height);
-            whitebalance = new WhiteBalanceKernel(width, height);
+            whiteBalance = new WhiteBalanceKernel(width, height);
         } catch(IOException e) {
             throw new IllegalStateException("Unable to initialize image processor service", e);
         }
@@ -78,7 +82,22 @@ public class ImageProcessorService {
 
     public ColoredImage whiteBalance(ColoredImage rgbImage) {
         return measureTimeAndReturn("White balance",
-                                    () -> whitebalance.balance(rgbImage));
+                                    () -> whiteBalance.balance(rgbImage));
     }
+
+    public Map<String, Kernel> getKernels() {
+        return Arrays.stream(this.getClass().getDeclaredFields())
+                     .filter(field -> Kernel.class.isAssignableFrom(field.getType()))
+                     .collect(Collectors.toMap(Field::getName, this::getFieldValue));
+    }
+
+    private Kernel getFieldValue(Field field) {
+        try {
+            return (Kernel) field.get(this);
+        } catch(IllegalAccessException e) {
+            return null;
+        }
+    }
+
 
 }

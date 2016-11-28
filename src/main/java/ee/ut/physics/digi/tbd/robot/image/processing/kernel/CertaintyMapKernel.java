@@ -13,12 +13,12 @@ import java.nio.IntBuffer;
 @Slf4j
 public abstract class CertaintyMapKernel extends Kernel {
 
-    private final int absoluteSize;
-    private final int localWorkgroupSize;
-    private final int globalWorkgroupSize;
+    protected final int absoluteSize;
+    protected final int localWorkgroupSize;
+    protected final int globalWorkgroupSize;
 
-    private final CLBuffer<IntBuffer> inputBuffer;
-    private final CLBuffer<IntBuffer> outputBuffer;
+    protected final CLBuffer<IntBuffer> inputBuffer;
+    protected final CLBuffer<IntBuffer> outputBuffer;
 
     public CertaintyMapKernel(int width, int height, String kernelFileName, String kernelName) throws IOException {
         super(kernelFileName, kernelName);
