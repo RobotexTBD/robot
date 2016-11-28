@@ -10,6 +10,7 @@ import ee.ut.physics.digi.tbd.robot.referee.RefereeMock;
 import ee.ut.physics.digi.tbd.robot.referee.RefereeProxy;
 import ee.ut.physics.digi.tbd.robot.util.SerialUtil;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.lang.reflect.Proxy;
 
@@ -40,11 +41,15 @@ public class RobotConfig {
     @Getter
     private String refereePortName;
 
+    @Configurable(value = "Max speed", maxFloat = 255.0f)
+    @Getter @Setter
+    private float speed = 0;
 
     public RobotConfig() {
+
         mainboardInvocationHandler = new PassThroughInvocationHandler<>();
         classLoader = this.getClass().getClassLoader();
-        mainboardProxy = (Mainboard) Proxy.newProxyInstance(classLoader, new Class[] {Mainboard.class },
+        mainboardProxy = (Mainboard) Proxy.newProxyInstance(classLoader, new Class[] {Mainboard.class},
                                                             mainboardInvocationHandler);
 
         refereeProxy = new RefereeProxy();

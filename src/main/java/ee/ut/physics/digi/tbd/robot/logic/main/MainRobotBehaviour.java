@@ -54,7 +54,7 @@ public class MainRobotBehaviour extends RobotBehaviour implements Runnable {
                         turnRight();
                     } else if(Math.abs(320 - bestBall.getBlob().getCenterX()) < 40 + bestBall.getBlob().getMaxY() / 6) {
                         moveForward();
-                        if(bestBall.getBlob().getMaxY() > 440) {
+                        if(bestBall.getBlob().getMaxY() > 400) {
                             startDribbler();
                             behaviourState = MainRobotBehaviourState.CATCHING;
                         }

@@ -180,8 +180,9 @@ public class DebugWindow extends Application {
         slider.setValue(BeanUtil.<Float>get(object, field));
         textField.setText(Float.toString(BeanUtil.<Float>get(object, field)));
         slider.valueProperty().addListener((observable, oldValue, newValue) -> {
-            BeanUtil.set(object, field.getName(), newValue);
-            textField.setText(Float.toString(newValue.floatValue()));
+            float value = newValue.floatValue();
+            BeanUtil.set(object, field.getName(), value);
+            textField.setText(Float.toString(value));
         });
         textField.textProperty().addListener((observable, oldValue, newValue) -> {
             try {

@@ -38,4 +38,7 @@ public final class RobotContext {
         return robotConfig.getRefereeProxy();
     }
 
+    public float getSpeed() {
+        return robotConfig.getSpeed();
+    }
 }

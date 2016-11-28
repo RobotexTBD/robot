@@ -3,6 +3,7 @@ package ee.ut.physics.digi.tbd.robot.mainboard;
 
 import com.fazecast.jSerialComm.SerialPort;
 import ee.ut.physics.digi.tbd.robot.Settings;
+import ee.ut.physics.digi.tbd.robot.context.RobotContextHolder;
 import ee.ut.physics.digi.tbd.robot.mainboard.command.*;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +16,6 @@ import java.util.stream.Collectors;
 @Slf4j
 public class MainboardImpl implements Mainboard {
 
-    private static final int MAX_SPEED = 255;
     private final SerialPort serialPort;
     private final Thread readerThread;
     private final Thread coilgunChargerThread;
@@ -113,7 +113,7 @@ public class MainboardImpl implements Mainboard {
     }
 
     private int getTransformedSpeed(MotorSpeedCommand command) {
-        int transformedSpeed = (int) (command.getSpeed() * MAX_SPEED);
+        int transformedSpeed = (int) (command.getSpeed() * RobotContextHolder.getContext().getSpeed());
         return isSpeedNegative(command.getMotor(), command.getDirection()) ? -transformedSpeed : transformedSpeed;
     }
 
