@@ -1,5 +1,6 @@
 package ee.ut.physics.digi.tbd.robot.context;
 
+import com.fazecast.jSerialComm.SerialPort;
 import ee.ut.physics.digi.tbd.robot.debug.Configurable;
 import ee.ut.physics.digi.tbd.robot.mainboard.Mainboard;
 import ee.ut.physics.digi.tbd.robot.mainboard.MainboardImpl;
@@ -7,6 +8,7 @@ import ee.ut.physics.digi.tbd.robot.mainboard.MainboardMock;
 import ee.ut.physics.digi.tbd.robot.referee.RefereeImpl;
 import ee.ut.physics.digi.tbd.robot.referee.RefereeMock;
 import ee.ut.physics.digi.tbd.robot.referee.RefereeProxy;
+import ee.ut.physics.digi.tbd.robot.util.SerialUtil;
 import lombok.Getter;
 
 import java.lang.reflect.Proxy;
@@ -42,7 +44,7 @@ public class RobotConfig {
     public RobotConfig() {
         mainboardInvocationHandler = new PassThroughInvocationHandler<>();
         classLoader = this.getClass().getClassLoader();
-        mainboardProxy = (Mainboard) Proxy.newProxyInstance(classLoader, new Class[] { Mainboard.class },
+        mainboardProxy = (Mainboard) Proxy.newProxyInstance(classLoader, new Class[] {Mainboard.class },
                                                             mainboardInvocationHandler);
 
         refereeProxy = new RefereeProxy();
@@ -50,25 +52,49 @@ public class RobotConfig {
 
     public void setMockMainboard(boolean mockMainboard) {
         this.mockMainboard = mockMainboard;
-        mainboardInvocationHandler.setTarget(mockMainboard ? new MainboardMock() : new MainboardImpl());
+        reloadMainboard();
     }
 
     public void setMainboardPortName(String mainboardPortName) {
         this.mainboardPortName = mainboardPortName;
-        if(!mockMainboard) {
-            mainboardInvocationHandler.setTarget(new MainboardImpl());
+        reloadMainboard();
+    }
+
+    private void reloadMainboard() {
+        if(mockMainboard) {
+            mainboardInvocationHandler.setTarget(new MainboardMock());
+            return;
+        }
+        try {
+            SerialPort serialPort = SerialUtil.openPort(mainboardPortName);
+            mainboardInvocationHandler.setTarget(new MainboardImpl(serialPort));
+        } catch(Exception e) {
+            mainboardInvocationHandler.setTarget(new MainboardMock());
         }
     }
 
     public void setMockReferee(boolean mockReferee) {
         this.mockReferee = mockReferee;
-        refereeProxy.setConcreteReferee(mockReferee ? new RefereeMock() : new RefereeImpl());
+        reloadReferee();
     }
 
     public void setRefereePortName(String refereePortName) {
         this.refereePortName = refereePortName;
-        if(!mockReferee) {
-            refereeProxy.setConcreteReferee(new RefereeImpl());
+        reloadReferee();
+    }
+
+    private void reloadReferee() {
+        if(mockReferee) {
+            refereeProxy.setConcreteReferee(new RefereeMock());
+            return;
+        }
+        try {
+            SerialPort serialPort = SerialUtil.openPort(refereePortName);
+            refereeProxy.setConcreteReferee(new RefereeImpl(serialPort));
+        } catch(Exception e) {
+            refereeProxy.setConcreteReferee(new RefereeMock());
         }
     }
+
+
 }

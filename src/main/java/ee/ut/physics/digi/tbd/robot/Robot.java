@@ -4,8 +4,6 @@ import com.github.sarxos.webcam.Webcam;
 import ee.ut.physics.digi.tbd.robot.context.RobotContext;
 import ee.ut.physics.digi.tbd.robot.context.RobotContextHolder;
 import ee.ut.physics.digi.tbd.robot.debug.DebugWindow;
-import ee.ut.physics.digi.tbd.robot.factory.MainboardFactory;
-import ee.ut.physics.digi.tbd.robot.factory.RefereeFactory;
 import ee.ut.physics.digi.tbd.robot.image.ColoredImage;
 import ee.ut.physics.digi.tbd.robot.image.GrayscaleImage;
 import ee.ut.physics.digi.tbd.robot.image.blob.Blob;
@@ -61,8 +59,8 @@ public class Robot implements Runnable {
         cameraReader = new CameraReader(camera);
         ballDetector = new BallDetector();
         goalDetector = new GoalDetector();
-        mainboard = MainboardFactory.getInstance().getMainboard();
-        referee = RefereeFactory.getInstance().getReferee();
+        mainboard = context.getMainboard();
+        referee = context.getReferee();
     }
 
 

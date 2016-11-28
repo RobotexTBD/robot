@@ -4,7 +4,6 @@ package ee.ut.physics.digi.tbd.robot.mainboard;
 import com.fazecast.jSerialComm.SerialPort;
 import ee.ut.physics.digi.tbd.robot.Settings;
 import ee.ut.physics.digi.tbd.robot.mainboard.command.*;
-import ee.ut.physics.digi.tbd.robot.util.SerialUtil;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,8 +27,8 @@ public class MainboardImpl implements Mainboard {
 
     private final Settings settings = Settings.getInstance();
 
-    public MainboardImpl() {
-        serialPort = SerialUtil.openPort(Settings.getInstance().getMainboardPortName());
+    public MainboardImpl(SerialPort serialPort) {
+        this.serialPort = serialPort;
         serialPort.setComPortParameters(19200, 8, SerialPort.ONE_STOP_BIT, SerialPort.NO_PARITY);
         serialPort.setComPortTimeouts(SerialPort.TIMEOUT_WRITE_BLOCKING, 0, 100);
         readerThread = new Thread(this.new EventReader(), "Mainboard reader thread");

@@ -89,13 +89,13 @@ public class DebugWindow extends Application {
     @SuppressWarnings("unchecked")
     public void setImage(Image image, String label) {
         if(!images.containsKey(label)) {
-            imageNames.add(label);
+            Platform.runLater(() -> imageNames.add(label));
             List<Node> imagePanes = ((Pane) scene.lookup("#images")).getChildren();
             scene.lookupAll("#images .imageChoice").stream()
                  .map(node -> (ComboBox) node)
                  .filter(comboBox -> comboBox.getValue() == null)
                  .forEach(comboBox -> Platform.runLater(() -> comboBox.setValue(label)));
-            imageNames.remove("");
+            Platform.runLater(() -> imageNames.remove(""));
         }
         images.put(label, image.toWritableImage());
     }

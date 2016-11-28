@@ -2,7 +2,6 @@ package ee.ut.physics.digi.tbd.robot.referee;
 
 import com.fazecast.jSerialComm.SerialPort;
 import ee.ut.physics.digi.tbd.robot.Settings;
-import ee.ut.physics.digi.tbd.robot.util.SerialUtil;
 import ee.ut.physics.digi.tbd.robot.util.StringUtil;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -21,9 +20,9 @@ public class RefereeImpl implements Referee {
     private final List<RefereeListener> listeners = new ArrayList<>();
     private final Thread readerThread;
 
-    public RefereeImpl() {
+    public RefereeImpl(SerialPort serialPort) {
         Settings settings = Settings.getInstance();
-        serialPort = SerialUtil.openPort(settings.getRadioPortName());
+        this.serialPort = serialPort;
         fieldId = settings.getFieldId();
         robotId = settings.getRobotId();
         serialPort.setComPortParameters(19200, 8, SerialPort.ONE_STOP_BIT, SerialPort.NO_PARITY);
