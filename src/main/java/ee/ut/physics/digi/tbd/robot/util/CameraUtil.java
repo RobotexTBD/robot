@@ -14,7 +14,6 @@ public final class CameraUtil {
                                       .findAny()
                                       .orElseThrow(() -> new IllegalArgumentException("Cannot find webcam \"" +
                                                                                       nameFragment + "\""));
-
         camera.setViewSize(new Dimension(width, height));
         camera.open();
         return camera;

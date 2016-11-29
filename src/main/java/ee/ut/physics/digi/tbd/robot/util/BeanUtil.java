@@ -30,14 +30,17 @@ public final class BeanUtil {
         return Enum.class.isAssignableFrom(field.getType());
     }
 
-    public static void set(Object target, Field field, Object value) {
-        set(target, field.getName(), value);
+    public static boolean set(Object target, Field field, Object value) {
+        return set(target, field.getName(), value);
     }
 
-    public static void set(Object target, String field, Object value) {
+    public static boolean set(Object target, String field, Object value) {
         try {
             PropertyUtils.setProperty(target, field, value);
-        } catch(NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            return true;
+        } catch(InvocationTargetException e) {
+            return false;
+        } catch(NoSuchMethodException | IllegalAccessException e) {
             throw new IllegalArgumentException("Unable to invoke setter for " + target.getClass().getSimpleName() + "" +
                                                "::" + field, e);
         }

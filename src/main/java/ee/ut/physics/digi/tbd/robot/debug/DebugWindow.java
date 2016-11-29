@@ -146,12 +146,19 @@ public class DebugWindow extends Application {
         slider.setValue(BeanUtil.<Integer>get(object, field));
         textField.setText(Integer.toString(BeanUtil.<Integer>get(object, field)));
         slider.valueProperty().addListener((observable, oldValue, newValue) -> {
-            BeanUtil.set(object, field, newValue.intValue());
+            if(!BeanUtil.set(object, field, newValue.intValue())) {
+                slider.setValue(oldValue.doubleValue());
+                return;
+            }
             textField.setText(Integer.toString(newValue.intValue()));
         });
         textField.textProperty().addListener((observable, oldValue, newValue) -> {
             try {
                 int value = Integer.parseInt(newValue);
+                if(!BeanUtil.set(object, field, value)) {
+                    textField.setText(oldValue);
+                    return;
+                }
                 if(value < (int) slider.getMin()) {
                     value = (int) slider.getMin();
                     textField.setText(Integer.toString(value));
@@ -160,7 +167,6 @@ public class DebugWindow extends Application {
                     textField.setText(Integer.toString(value));
                 }
                 slider.setValue(value);
-                BeanUtil.set(object, field, value);
             } catch(NumberFormatException e) {
                 textField.setText(oldValue);
             }
@@ -181,7 +187,10 @@ public class DebugWindow extends Application {
         textField.setText(Float.toString(BeanUtil.<Float>get(object, field)));
         slider.valueProperty().addListener((observable, oldValue, newValue) -> {
             float value = newValue.floatValue();
-            BeanUtil.set(object, field.getName(), value);
+            if(!BeanUtil.set(object, field, value)) {
+                slider.setValue(oldValue.doubleValue());
+                return;
+            }
             textField.setText(Float.toString(value));
         });
         textField.textProperty().addListener((observable, oldValue, newValue) -> {
@@ -209,7 +218,9 @@ public class DebugWindow extends Application {
         TextField textField = ((TextField) config.lookup("TextField"));
         textField.setText(BeanUtil.get(object, field));
         textField.textProperty().addListener((observable, oldValue, newValue) -> {
-            BeanUtil.set(object, field, newValue);
+            if(!BeanUtil.set(object, field, newValue)) {
+                textField.setText(oldValue);
+            }
         });
         return config;
     }
@@ -220,7 +231,9 @@ public class DebugWindow extends Application {
         CheckBox checkbox = ((CheckBox) config.lookup("CheckBox"));
         checkbox.setSelected(BeanUtil.get(object, field));
         checkbox.selectedProperty().addListener((observable, oldValue, newValue) -> {
-            BeanUtil.set(object, field, newValue);
+            if(!BeanUtil.set(object, field, newValue)) {
+                checkbox.selectedProperty().setValue(oldValue);
+            }
         });
         return config;
     }
@@ -245,7 +258,9 @@ public class DebugWindow extends Application {
                     break;
                 }
             }
-            BeanUtil.set(object, field, result);
+            if(!BeanUtil.set(object, field, result)) {
+                choicebox.setValue(oldValue.getSelectedItem());
+            }
         });
         return config;
     }

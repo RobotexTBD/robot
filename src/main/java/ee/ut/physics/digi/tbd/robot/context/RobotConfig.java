@@ -46,12 +46,11 @@ public class RobotConfig {
     private float speed = 0;
 
     public RobotConfig() {
-
         mainboardInvocationHandler = new PassThroughInvocationHandler<>();
         classLoader = this.getClass().getClassLoader();
         mainboardProxy = (Mainboard) Proxy.newProxyInstance(classLoader, new Class[] {Mainboard.class},
                                                             mainboardInvocationHandler);
-
+        mainboardInvocationHandler.setTarget(new MainboardMock());
         refereeProxy = new RefereeProxy();
     }
 
@@ -74,7 +73,8 @@ public class RobotConfig {
             SerialPort serialPort = SerialUtil.openPort(mainboardPortName);
             mainboardInvocationHandler.setTarget(new MainboardImpl(serialPort));
         } catch(Exception e) {
-            mainboardInvocationHandler.setTarget(new MainboardMock());
+            mockMainboard = true;
+            throw e;
         }
     }
 
@@ -97,7 +97,8 @@ public class RobotConfig {
             SerialPort serialPort = SerialUtil.openPort(refereePortName);
             refereeProxy.setConcreteReferee(new RefereeImpl(serialPort));
         } catch(Exception e) {
-            refereeProxy.setConcreteReferee(new RefereeMock());
+            mockReferee = true;
+            throw e;
         }
     }
 

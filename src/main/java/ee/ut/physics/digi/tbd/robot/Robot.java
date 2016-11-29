@@ -89,15 +89,13 @@ public class Robot implements Runnable {
             public void onStop() {
                 log.info("Game stopped");
                 running.set(false);
-            }
-        });
-        while(true) {
-            if(!running.get()) {
                 mainboard.sendCommandsBatch(new MotorStopCommand(Motor.RIGHT),
                                             new MotorStopCommand(Motor.LEFT),
                                             new MotorStopCommand(Motor.BACK));
-                continue;
+                behaviour = null;
             }
+        });
+        while(true) {
             ColoredImage rgbImage = cameraReader.readRgbImage();
             long startTime = System.currentTimeMillis();
             loop(rgbImage);
@@ -133,8 +131,10 @@ public class Robot implements Runnable {
 
         MainboardState mainboardState = new MainboardState(mainboard.getDribblerFilled(),
                                                            mainboard.getCoilgunCharged());
-
-        behaviour.stateUpdate(new RobotState(visibleObjects, mainboardState));
+        log.error(behaviour != null ? "RUNNING" : "STOPPED");
+        if(behaviour != null) {
+            behaviour.stateUpdate(new RobotState(visibleObjects, mainboardState));
+        }
         if(isDebug()) {
             debugWindow.setImage(rgbImage, "Original");
             debugWindow.setImage(ballMap, "Ball map");
