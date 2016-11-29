@@ -131,7 +131,6 @@ public class Robot implements Runnable {
 
         MainboardState mainboardState = new MainboardState(mainboard.getDribblerFilled(),
                                                            mainboard.getCoilgunCharged());
-        log.error(behaviour != null ? "RUNNING" : "STOPPED");
         if(behaviour != null) {
             behaviour.stateUpdate(new RobotState(visibleObjects, mainboardState));
         }

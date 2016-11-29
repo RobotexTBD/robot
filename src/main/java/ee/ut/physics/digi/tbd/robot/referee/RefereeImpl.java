@@ -94,10 +94,10 @@ public class RefereeImpl implements Referee {
                 char element = (char) serialPort.getInputStream().read();
                 buffer[bufferOffset] = element;
                 buffer[bufferOffset + PACKET_SIZE] = element;
-                char[] bufferCopy = Arrays.copyOfRange(buffer,bufferOffset, bufferOffset + PACKET_SIZE);
-                handleData(bufferCopy);
                 bufferOffset++;
                 bufferOffset %= PACKET_SIZE;
+                char[] bufferCopy = Arrays.copyOfRange(buffer,bufferOffset, bufferOffset + PACKET_SIZE);
+                handleData(bufferCopy);
             }
         }
 
